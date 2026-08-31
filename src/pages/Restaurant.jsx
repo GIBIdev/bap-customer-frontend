@@ -1,24 +1,30 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/client";
 import { useParams, Link } from "react-router-dom";
+import "../components/css/Restaurant.css";
 
 export default function Restaurant() {
   const { id } = useParams();
+
   const [restaurant, setRestaurant] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
     api
       .get(`/restaurants/${id}`)
-      .then((res) => setRestaurant(res.data))
+      .then((res) => {
+        setRestaurant(res.data);
+      })
       .catch((err) => {
         console.error(err);
         setError("Unable to load restaurant.");
       });
   }, [id]);
 
-  const addToCart = (item) => {
-    const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  function addToCart(item) {
+    const cart = JSON.parse(
+      localStorage.getItem("cart") || "[]"
+    );
 
     const existingItem = cart.find(
       (cartItem) => cartItem.id === item.id
@@ -36,106 +42,203 @@ export default function Restaurant() {
       });
     }
 
-    localStorage.setItem("cart", JSON.stringify(cart));
+    localStorage.setItem(
+      "cart",
+      JSON.stringify(cart)
+    );
 
     alert(`${item.name} added to cart!`);
-  };
+  }
 
   if (error) {
     return (
-      <div style={{ padding: "40px" }}>
-        <h2>{error}</h2>
-        <Link to="/">← Back to restaurants</Link>
+      <div className="restaurant-page">
+
+        <div className="restaurant-error">
+
+          <div className="restaurant-error-icon">
+            😕
+          </div>
+
+          <h2>{error}</h2>
+
+          <Link to="/">
+            ← Back to restaurants
+          </Link>
+
+        </div>
+
       </div>
     );
   }
 
   if (!restaurant) {
-    return <div style={{ padding: "40px" }}>Loading...</div>;
+    return (
+      <div className="restaurant-page">
+
+        <div className="restaurant-loading">
+          Loading restaurant...
+        </div>
+
+      </div>
+    );
   }
 
   return (
-    <div
-      style={{
-        padding: "40px",
-        maxWidth: "1000px",
-        margin: "0 auto",
-      }}
-    >
-      <Link to="/">← Back to restaurants</Link>
+    <div className="restaurant-page">
 
-      <h1 style={{ marginTop: "20px" }}>{restaurant.name}</h1>
+      {/* HEADER */}
 
-      {restaurant.description && (
-        <p>{restaurant.description}</p>
-      )}
+      <div className="restaurant-header">
 
-      <p>{restaurant.address}</p>
+        <Link
+          to="/"
+          className="restaurant-back"
+        >
+          ← Back to restaurants
+        </Link>
 
-      {restaurant.categories.map((category) => (
-        <section key={category.id} style={{ marginTop: "35px" }}>
-          <h2>{category.name}</h2>
+        <div className="restaurant-hero">
 
-          {category.items.map((item) => (
-            <div
-              key={item.id}
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                padding: "20px",
-                marginBottom: "12px",
-                border: "1px solid #ddd",
-                borderRadius: "12px",
-              }}
+          <div className="restaurant-hero-content">
+
+            <p className="restaurant-eyebrow">
+              RESTAURANT
+            </p>
+
+            <h1>
+              {restaurant.name}
+            </h1>
+
+            {restaurant.description && (
+              <p className="restaurant-description">
+                {restaurant.description}
+              </p>
+            )}
+
+            <div className="restaurant-meta">
+
+              <span>
+                📍 {restaurant.address}
+              </span>
+
+              <span>
+                ⭐ 4.8
+              </span>
+
+              <span>
+                ⚡ Fast delivery
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      {/* MENU */}
+
+      <main className="restaurant-content">
+
+        <div className="restaurant-menu-header">
+
+          <div>
+            <p className="restaurant-eyebrow">
+              MENU
+            </p>
+
+            <h2>
+              What would you like?
+            </h2>
+          </div>
+
+          <Link
+            to="/cart"
+            className="restaurant-cart-button"
+          >
+            🛒 View Cart
+          </Link>
+
+        </div>
+
+
+        {restaurant.categories?.map(
+          (category) => (
+
+            <section
+              key={category.id}
+              className="restaurant-category"
             >
-              <div>
-                <h3 style={{ marginBottom: "6px" }}>
-                  {item.name}
-                </h3>
 
-                {item.description && (
-                  <p style={{ margin: "5px 0" }}>
-                    {item.description}
-                  </p>
-                )}
+              <div className="restaurant-category-header">
 
-                <strong>
-                  ${(item.priceCents / 100).toFixed(2)}
-                </strong>
+                <h2>
+                  {category.name}
+                </h2>
+
+                <span>
+                  {category.items?.length || 0} items
+                </span>
+
               </div>
 
-              <button
-                onClick={() => addToCart(item)}
-                style={{
-                  padding: "10px 18px",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                }}
-              >
-                + Add
-              </button>
-            </div>
-          ))}
-        </section>
-      ))}
 
-      <Link to="/cart">
-        <button
-          style={{
-            marginTop: "30px",
-            padding: "14px 25px",
-            border: "none",
-            borderRadius: "8px",
-            cursor: "pointer",
-            fontWeight: "bold",
-          }}
-        >
-          🛒 View Cart
-        </button>
-      </Link>
+              <div className="restaurant-items">
+
+                {category.items?.map(
+                  (item) => (
+
+                    <div
+                      key={item.id}
+                      className="restaurant-item"
+                    >
+
+                      <div className="restaurant-item-info">
+
+                        <h3>
+                          {item.name}
+                        </h3>
+
+                        {item.description && (
+                          <p>
+                            {item.description}
+                          </p>
+                        )}
+
+                        <strong>
+                          ${(item.priceCents / 100).toFixed(2)}
+                        </strong>
+
+                      </div>
+
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          addToCart(item)
+                        }
+                        className="restaurant-add-button"
+                      >
+                        + Add
+                      </button>
+
+                    </div>
+
+                  )
+                )}
+
+              </div>
+
+            </section>
+
+          )
+        )}
+
+      </main>
+
     </div>
   );
 }

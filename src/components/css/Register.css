@@ -1,0 +1,342 @@
+/* =========================================================
+   BAP CUSTOMER — REGISTER PAGE
+   ========================================================= */
+
+.register-page {
+  min-height: calc(100vh - 76px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 30px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff7f1 0%,
+      #ffffff 55%,
+      #fff1e9 100%
+    );
+
+  box-sizing: border-box;
+}
+
+.register-container {
+  width: 100%;
+  max-width: 520px;
+}
+
+
+/* =========================================================
+   REGISTER LOGO
+   ========================================================= */
+
+.register-logo {
+  display: block;
+  text-align: center;
+  margin-bottom: 30px;
+
+  color: var(--bap-black);
+  text-decoration: none;
+
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: -0.7px;
+}
+
+.register-logo > span:first-child {
+  margin-right: 8px;
+}
+
+.register-logo-accent {
+  color: var(--bap-orange);
+}
+
+
+/* =========================================================
+   REGISTER HEADER
+   ========================================================= */
+
+.register-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.register-header h1 {
+  margin: 0 0 10px;
+
+  color: var(--bap-black);
+  font-size: 38px;
+  line-height: 1.1;
+  letter-spacing: -1.5px;
+  font-weight: 900;
+}
+
+.register-header p {
+  max-width: 400px;
+  margin: 0 auto;
+
+  color: var(--bap-text-light);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+  width: 100%;
+  padding: 30px;
+
+  background: var(--bap-white);
+  border: 1px solid var(--bap-border);
+  border-radius: var(--radius-xl);
+
+  box-shadow: var(--shadow-md);
+
+  box-sizing: border-box;
+}
+
+
+/* =========================================================
+   REGISTER FORM
+   ========================================================= */
+
+.register-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+
+/* =========================================================
+   ERROR
+   ========================================================= */
+
+.register-error {
+  padding: 12px 14px;
+  margin-bottom: 20px;
+
+  border-radius: var(--radius-md);
+
+  background: #fff1f0;
+  border: 1px solid #ffd5d1;
+
+  color: #c53030;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   NAME ROW
+   ========================================================= */
+
+.register-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+
+/* =========================================================
+   FORM FIELD
+   ========================================================= */
+
+.register-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  margin-bottom: 18px;
+}
+
+.register-field label {
+  color: var(--bap-black);
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.register-field input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 14px 15px;
+
+  background: var(--bap-white);
+  color: var(--bap-black);
+
+  border: 1px solid var(--bap-border-dark);
+  border-radius: var(--radius-md);
+
+  outline: none;
+
+  font-size: 14px;
+
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.register-field input:focus {
+  border-color: var(--bap-orange);
+
+  box-shadow:
+    0 0 0 3px var(--bap-orange-light);
+}
+
+.register-field input::placeholder {
+  color: var(--bap-muted);
+}
+
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.register-terms {
+  margin: 5px 0 20px;
+
+  color: var(--bap-muted);
+
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   REGISTER SUBMIT
+   ========================================================= */
+
+.register-submit {
+  width: 100%;
+  min-height: 50px;
+
+  border: none;
+  border-radius: var(--radius-md);
+
+  background: var(--bap-orange);
+  color: var(--bap-white);
+
+  padding: 14px 20px;
+
+  font-size: 15px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.register-submit:hover {
+  background: var(--bap-orange-dark);
+
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.register-submit:active {
+  transform: translateY(0);
+}
+
+.register-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.register-login {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+
+  margin-top: 25px;
+  padding-top: 23px;
+
+  border-top: 1px solid var(--bap-border);
+
+  color: var(--bap-text-light);
+
+  font-size: 13px;
+}
+
+.register-login a {
+  color: var(--bap-orange);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.register-login a:hover {
+  color: var(--bap-orange-dark);
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.register-back {
+  display: block;
+
+  margin-top: 25px;
+
+  color: var(--bap-text-light);
+  text-decoration: none;
+
+  text-align: center;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.register-back:hover {
+  color: var(--bap-orange);
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .register-page {
+    min-height: calc(100vh - 68px);
+    padding: 40px 18px;
+  }
+
+  .register-logo {
+    margin-bottom: 22px;
+    font-size: 19px;
+  }
+
+  .register-header h1 {
+    font-size: 30px;
+  }
+
+  .register-header p {
+    font-size: 13px;
+  }
+
+  .register-card {
+    padding: 22px;
+  }
+
+  .register-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

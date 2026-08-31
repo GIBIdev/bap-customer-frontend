@@ -1,0 +1,330 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+
+export default function Checkout() {
+  const navigate = useNavigate();
+
+  const [cart] = useState()(() =>
+    JSON.parse(localStorage.getItem("cart") || "[]")
+  );
+
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [apartment, setApartment] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const subtotalCents = cart.reduce(
+    (sum, item) =>
+      sum + item.priceCents * item.quantity,
+    0
+  );
+
+  const deliveryCents = subtotalCents > 0 ? 199 : 0;
+
+  const totalCents =
+    subtotalCents + deliveryCents;
+
+  function formatPrice(cents) {
+    return `$${(cents / 100).toFixed(2)}`;
+  }
+
+  function handleSubmit(e){
+    e.preventDefault();
+
+    if (cart.length === 0) {
+      alert("Your cart is empty.");
+      navigate("/cart");
+      return;
+    }
+
+    /*
+     * Later this will become:
+     *
+     * api.post("/orders", {
+     *   items: cart,
+     *   customer: {
+     *     name,
+     *     phone,
+     *     address,
+     *     apartment,
+     *     notes
+     *   }
+     * })
+     */
+
+    alert("Order submission will connect to the BAP API.");
+
+    navigate("/");
+  }
+
+  if (cart.length === 0) {
+    return (
+      <div className="checkout-empty">
+        <div className="checkout-empty-icon">
+          🛒
+        </div>
+
+        <h1>Your cart is empty</h1>
+
+        <p>
+          Add some delicious food before
+          checking out.
+        </p>
+
+        <Link
+          to="/"
+          className="bap-button bap-button-primary"
+        >
+          Browse Restaurants
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="checkout-page">
+
+      <div className="checkout-header">
+        <Link to="/cart" className="checkout-back">
+          ← Back to cart
+        </Link>
+
+        <p className="bap-section-label">
+          CHECKOUT
+        </p>
+
+        <h1>Complete your order</h1>
+
+        <p>
+          Review your order and provide your
+          delivery information.
+        </p>
+      </div>
+
+      <div className="checkout-layout">
+
+        {/* DELIVERY FORM */}
+
+        <form
+          className="checkout-form"
+          onSubmit={handleSubmit}
+        >
+          <div className="checkout-card">
+
+            <div className="checkout-card-header">
+              <span className="checkout-step">
+                1
+              </span>
+
+              <div>
+                <h2>Delivery information</h2>
+
+                <p>
+                  Where should we deliver your order?
+                </p>
+              </div>
+            </div>
+
+            <div className="checkout-fields">
+
+              <div className="checkout-field">
+                <label>Full name</label>
+
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) =>
+                    setName(e.target.value)
+                  }
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
+
+              <div className="checkout-field">
+                <label>Phone number</label>
+
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(e.target.value)
+                  }
+                  placeholder="+1 (555) 123-4567"
+                  required
+                />
+              </div>
+
+              <div className="checkout-field full">
+                <label>Delivery address</label>
+
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) =>
+                    setAddress(e.target.value)
+                  }
+                  placeholder="123 Main Street"
+                  required
+                />
+              </div>
+
+              <div className="checkout-field full">
+                <label>
+                  Apartment / Unit
+                  <span> Optional</span>
+                </label>
+
+                <input
+                  type="text"
+                  value={apartment}
+                  onChange={(e) =>
+                    setApartment(e.target.value)
+                  }
+                  placeholder="Apartment 4B"
+                />
+              </div>
+
+              <div className="checkout-field full">
+                <label>
+                  Delivery notes
+                  <span> Optional</span>
+                </label>
+
+                <textarea
+                  value={notes}
+                  onChange={(e) =>
+                    setNotes(e.target.value)
+                  }
+                  placeholder="Leave at the door, call when you arrive..."
+                  rows={4}
+                />
+              </div>
+
+            </div>
+          </div>
+
+          <div className="checkout-card">
+
+            <div className="checkout-card-header">
+              <span className="checkout-step">
+                2
+              </span>
+
+              <div>
+                <h2>Payment</h2>
+
+                <p>
+                  Secure payment processing will
+                  be connected to BAP.
+                </p>
+              </div>
+            </div>
+
+            <div className="payment-placeholder">
+              <div className="payment-icon">
+                💳
+              </div>
+
+              <div>
+                <strong>
+                  Secure payment
+                </strong>
+
+                <p>
+                  Payment integration will be
+                  connected through the BAP API.
+                </p>
+              </div>
+            </div>
+
+          </div>
+
+          <button
+            type="submit"
+            className="bap-button bap-button-primary checkout-submit"
+          >
+            Place Order →
+          </button>
+
+        </form>
+
+        {/* ORDER SUMMARY */}
+
+        <aside className="checkout-summary">
+
+          <div className="checkout-summary-card">
+
+            <h2>Order summary</h2>
+
+            <div className="summary-items">
+
+              {cart.map((item) => (
+                <div
+                  key={item.id}
+                  className="summary-item"
+                >
+                  <div>
+                    <strong>
+                      {item.quantity} ×{" "}
+                      {item.name}
+                    </strong>
+
+                    <span>
+                      {formatPrice(
+                        item.priceCents
+                      )}{" "}
+                      each
+                    </span>
+                  </div>
+
+                  <strong>
+                    {formatPrice(
+                      item.priceCents *
+                        item.quantity
+                    )}
+                  </strong>
+                </div>
+              ))}
+
+            </div>
+
+            <div className="summary-divider" />
+
+            <div className="summary-row">
+              <span>Subtotal</span>
+              <strong>
+                {formatPrice(subtotalCents)}
+              </strong>
+            </div>
+
+            <div className="summary-row">
+              <span>Delivery</span>
+              <strong>
+                {formatPrice(deliveryCents)}
+              </strong>
+            </div>
+
+            <div className="summary-divider" />
+
+            <div className="summary-total">
+              <span>Total</span>
+              <strong>
+                {formatPrice(totalCents)}
+              </strong>
+            </div>
+
+          </div>
+
+          <div className="checkout-security">
+            🔒 Your information is securely
+            processed.
+          </div>
+
+        </aside>
+
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,134 @@
+/* =========================================================
+   BAP CUSTOMER — NAVBAR
+   ========================================================= */
+
+.bap-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  width: 100%;
+  min-height: 76px;
+
+  padding: 0 40px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  background: rgba(255, 255, 255, 0.96);
+
+  border-bottom: 1px solid var(--bap-border);
+
+  backdrop-filter: blur(12px);
+}
+
+/* =========================================================
+   LOGO
+   ========================================================= */
+
+.bap-logo {
+  display: inline-flex;
+  align-items: center;
+
+  color: var(--bap-black);
+
+  text-decoration: none;
+
+  font-size: 21px;
+  font-weight: 900;
+
+  letter-spacing: -0.7px;
+
+  white-space: nowrap;
+}
+
+.bap-logo-icon {
+  margin-right: 8px;
+}
+
+.bap-logo-accent {
+  color: var(--bap-orange);
+}
+
+/* =========================================================
+   NAVIGATION
+   ========================================================= */
+
+.bap-nav-links {
+  display: flex;
+  align-items: center;
+
+  gap: 26px;
+}
+
+.bap-nav-links a {
+  text-decoration: none;
+
+  color: var(--bap-text);
+
+  font-size: 14px;
+  font-weight: 700;
+
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.bap-nav-links a:hover {
+  color: var(--bap-orange);
+}
+
+/* =========================================================
+   CART BUTTON
+   ========================================================= */
+
+.bap-nav-cart {
+  padding: 11px 18px;
+
+  border-radius: var(--radius-md);
+
+  background: var(--bap-orange);
+
+  color: var(--bap-white) !important;
+
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.bap-nav-cart:hover {
+  background: var(--bap-orange-dark);
+
+  color: var(--bap-white) !important;
+
+  transform: translateY(-1px);
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .bap-navbar {
+    min-height: 68px;
+
+    padding: 0 18px;
+  }
+
+  .bap-logo {
+    font-size: 18px;
+  }
+
+  .bap-nav-links {
+    gap: 14px;
+  }
+
+  .bap-nav-links a {
+    font-size: 12px;
+  }
+
+  .bap-nav-cart {
+    padding: 9px 13px;
+  }
+}

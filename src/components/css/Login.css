@@ -1,0 +1,364 @@
+/* =========================================================
+   BAP CUSTOMER — LOGIN PAGE
+   ========================================================= */
+
+.login-page {
+  min-height: calc(100vh - 76px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 60px 30px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #fff7f1 0%,
+      #ffffff 55%,
+      #fff1e9 100%
+    );
+}
+
+
+/* =========================================================
+   LOGIN CONTAINER
+   ========================================================= */
+
+.login-container {
+  width: 100%;
+  max-width: 460px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
+/* =========================================================
+   LOGIN HEADER
+   ========================================================= */
+
+.login-header {
+  width: 100%;
+
+  text-align: center;
+
+  margin-bottom: 28px;
+}
+
+
+/* =========================================================
+   LOGIN LOGO
+   ========================================================= */
+
+.login-logo {
+  display: inline-block;
+
+  margin-bottom: 30px;
+
+  color: var(--bap-black);
+
+  text-decoration: none;
+
+  font-size: 21px;
+  font-weight: 900;
+
+  letter-spacing: -0.7px;
+}
+
+.login-logo > span:first-child {
+  margin-right: 8px;
+}
+
+.login-logo-accent {
+  color: var(--bap-orange);
+}
+
+
+/* =========================================================
+   LOGIN TITLE
+   ========================================================= */
+
+.login-header h1 {
+  margin: 0 0 10px;
+
+  color: var(--bap-black);
+
+  font-size: 38px;
+  line-height: 1.1;
+
+  letter-spacing: -1.5px;
+
+  font-weight: 900;
+}
+
+
+/* =========================================================
+   LOGIN DESCRIPTION
+   ========================================================= */
+
+.login-header p {
+  max-width: 390px;
+
+  margin: 0 auto;
+
+  color: var(--bap-text-light);
+
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+
+/* =========================================================
+   LOGIN CARD
+   ========================================================= */
+
+.login-card {
+  width: 100%;
+
+  padding: 30px;
+
+  background: var(--bap-white);
+
+  border: 1px solid var(--bap-border);
+
+  border-radius: var(--radius-xl);
+
+  box-shadow: var(--shadow-md);
+}
+
+
+/* =========================================================
+   LOGIN FORM
+   ========================================================= */
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+
+  gap: 20px;
+}
+
+
+/* =========================================================
+   FORM FIELD
+   ========================================================= */
+
+.login-field {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.login-field label {
+  color: var(--bap-black);
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+
+/* =========================================================
+   FORM INPUT
+   ========================================================= */
+
+.login-field input {
+  width: 100%;
+
+  padding: 14px 15px;
+
+  background: var(--bap-white);
+  color: var(--bap-black);
+
+  border: 1px solid var(--bap-border-dark);
+
+  border-radius: var(--radius-md);
+
+  outline: none;
+
+  font-size: 14px;
+
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+
+.login-field input:focus {
+  border-color: var(--bap-orange);
+
+  box-shadow:
+    0 0 0 3px var(--bap-orange-light);
+}
+
+.login-field input::placeholder {
+  color: var(--bap-muted);
+}
+
+
+/* =========================================================
+   PASSWORD HEADER
+   ========================================================= */
+
+.login-password-header {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+
+/* =========================================================
+   FORGOT PASSWORD
+   ========================================================= */
+
+.forgot-password {
+  padding: 0;
+
+  border: none;
+
+  background: transparent;
+
+  color: var(--bap-orange);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.forgot-password:hover {
+  color: var(--bap-orange-dark);
+
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   LOGIN ERROR
+   ========================================================= */
+
+.login-error {
+  padding: 12px 14px;
+
+  border-radius: var(--radius-md);
+
+  background: #fff1f0;
+
+  border: 1px solid #ffd5d1;
+
+  color: #c53030;
+
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   LOGIN SUBMIT
+   ========================================================= */
+
+.login-submit {
+  width: 100%;
+
+  min-height: 50px;
+
+  margin-top: 5px;
+
+  font-size: 15px;
+}
+
+.login-submit:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+
+/* =========================================================
+   REGISTER LINK
+   ========================================================= */
+
+.login-register {
+  display: flex;
+
+  justify-content: center;
+  align-items: center;
+
+  gap: 5px;
+
+  margin-top: 25px;
+  padding-top: 23px;
+
+  border-top: 1px solid var(--bap-border);
+
+  color: var(--bap-text-light);
+
+  font-size: 13px;
+}
+
+.login-register a {
+  color: var(--bap-orange);
+
+  text-decoration: none;
+
+  font-weight: 800;
+}
+
+.login-register a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.login-back {
+  margin-top: 25px;
+
+  color: var(--bap-text-light);
+
+  text-decoration: none;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.login-back:hover {
+  color: var(--bap-orange);
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 600px) {
+  .login-page {
+    min-height: calc(100vh - 68px);
+
+    padding: 40px 18px;
+  }
+
+  .login-logo {
+    margin-bottom: 22px;
+
+    font-size: 19px;
+  }
+
+  .login-header h1 {
+    font-size: 30px;
+  }
+
+  .login-header p {
+    font-size: 13px;
+  }
+
+  .login-card {
+    padding: 22px;
+  }
+}

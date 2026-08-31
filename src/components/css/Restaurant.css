@@ -1,0 +1,272 @@
+.restaurant-page {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #191919;
+  padding: 40px 7% 80px;
+  box-sizing: border-box;
+}
+
+.restaurant-header {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.restaurant-back {
+  display: inline-block;
+  color: #777;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.restaurant-back:hover {
+  color: #ff4f0a;
+}
+
+.restaurant-hero {
+  background:
+    linear-gradient(
+      135deg,
+      #fff7f1 0%,
+      #ffffff 60%,
+      #fff1e9 100%
+    );
+  border: 1px solid #eeeeee;
+  border-radius: 22px;
+  padding: 45px;
+}
+
+.restaurant-hero-content {
+  max-width: 800px;
+}
+
+.restaurant-eyebrow {
+  color: #ff4f0a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+  margin: 0 0 8px;
+}
+
+.restaurant-hero h1 {
+  margin: 0 0 12px;
+  color: #191919;
+  font-size: 42px;
+  font-weight: 900;
+  letter-spacing: -1.7px;
+}
+
+.restaurant-description {
+  color: #666;
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 650px;
+  margin-bottom: 22px;
+}
+
+.restaurant-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.restaurant-meta span {
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  padding: 8px 11px;
+  border-radius: 8px;
+  color: #555;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.restaurant-content {
+  max-width: 1100px;
+  margin: 45px auto 0;
+}
+
+.restaurant-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  margin-bottom: 30px;
+}
+
+.restaurant-menu-header h2 {
+  margin: 0;
+  color: #191919;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.restaurant-cart-button {
+  background: #ff4f0a;
+  color: #ffffff;
+  padding: 11px 17px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.restaurant-cart-button:hover {
+  background: #e94706;
+}
+
+.restaurant-category {
+  margin-bottom: 40px;
+}
+
+.restaurant-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.restaurant-category-header h2 {
+  margin: 0;
+  color: #191919;
+  font-size: 21px;
+  font-weight: 850;
+}
+
+.restaurant-category-header span {
+  color: #999;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.restaurant-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.restaurant-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #eeeeee;
+  border-radius: 14px;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s,
+    transform 0.2s;
+}
+
+.restaurant-item:hover {
+  border-color: #ffd3c4;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+  transform: translateY(-1px);
+}
+
+.restaurant-item-info {
+  min-width: 0;
+}
+
+.restaurant-item-info h3 {
+  margin: 0 0 6px;
+  color: #191919;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.restaurant-item-info p {
+  margin: 0 0 9px;
+  color: #888;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.restaurant-item-info strong {
+  color: #ff4f0a;
+  font-size: 14px;
+}
+
+.restaurant-add-button {
+  flex-shrink: 0;
+  border: none;
+  background: #ff4f0a;
+  color: #ffffff;
+  padding: 10px 17px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.restaurant-add-button:hover {
+  background: #e94706;
+}
+
+.restaurant-loading {
+  max-width: 1100px;
+  margin: 100px auto;
+  text-align: center;
+  color: #777;
+  font-size: 14px;
+}
+
+.restaurant-error {
+  max-width: 520px;
+  margin: 100px auto;
+  text-align: center;
+  padding: 45px 30px;
+  border: 1px solid #eeeeee;
+  border-radius: 20px;
+}
+
+.restaurant-error-icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+}
+
+.restaurant-error h2 {
+  color: #191919;
+  margin-bottom: 15px;
+}
+
+.restaurant-error a {
+  color: #ff4f0a;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+@media (max-width: 650px) {
+  .restaurant-page {
+    padding: 30px 16px 60px;
+  }
+
+  .restaurant-hero {
+    padding: 30px 22px;
+  }
+
+  .restaurant-hero h1 {
+    font-size: 32px;
+  }
+
+  .restaurant-menu-header {
+    align-items: flex-start;
+    gap: 20px;
+    flex-direction: column;
+  }
+
+  .restaurant-item {
+    align-items: flex-start;
+  }
+
+  .restaurant-meta {
+    flex-direction: column;
+  }
+
+  .restaurant-meta span {
+    width: fit-content;
+  }
+}
