@@ -1,3 +1,9 @@
+/**
+ * 
+ * A class that handles our buttons
+ * 
+ */
+
 export default function Button({
   children,
   type = "button",
