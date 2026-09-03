@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
-import { api } from "../api/client";
+import { useAuth } from "../context/AuthContext.jsx";
 
 import Button from "../components/common/Button";
 import Input from "../components/common/Input";
@@ -16,6 +15,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   async function handleLogin(e) {
     e.preventDefault();
@@ -30,15 +30,12 @@ export default function Login() {
     try {
       setLoading(true);
 
-      const res = await api.post("/auth/login", {
-        email,
-        password,
-      });
+      const data = await login(email, password);
 
-      console.log("LOGIN RESPONSE:", res.data);
+      console.log("LOGIN RESPONSE:", data);
 
-      localStorage.setItem("token", res.data.accessToken);
-
+      // Return to the restaurant home/hero after login.
+      // AuthContext now contains the authenticated user.
       navigate("/");
     } catch (err) {
       console.error("LOGIN ERROR:", err);
@@ -55,7 +52,6 @@ export default function Login() {
     <div className="login-page">
       <div className="login-container">
 
-        {/* HEADER */}
         <div className="login-header">
           <Link to="/" className="login-logo">
             <span>🍔</span>
@@ -73,18 +69,15 @@ export default function Login() {
           </p>
         </div>
 
-        {/* LOGIN CARD */}
         <div className="login-card">
           <form onSubmit={handleLogin}>
 
-            {/* ERROR */}
             {error && (
               <div className="login-error">
                 {error}
               </div>
             )}
 
-            {/* EMAIL */}
             <div className="login-field">
               <label htmlFor="email">
                 Email address
@@ -100,7 +93,6 @@ export default function Login() {
               />
             </div>
 
-            {/* PASSWORD */}
             <div className="login-field">
               <div className="login-password-header">
                 <label htmlFor="password">
@@ -130,7 +122,6 @@ export default function Login() {
               />
             </div>
 
-            {/* SUBMIT */}
             <Button
               type="submit"
               variant="primary"
@@ -141,7 +132,6 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* REGISTER */}
           <div className="login-register">
             <span>
               Don't have an account?
@@ -153,7 +143,6 @@ export default function Login() {
           </div>
         </div>
 
-        {/* BACK TO HOME */}
         <Link to="/" className="login-back">
           ← Back to BAP
         </Link>

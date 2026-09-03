@@ -1,8 +1,9 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Routes, Route } from "react-router-dom";
 
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
+import Profile from "./pages/Profile.jsx";
 import Cart from "./pages/Cart.jsx";
 import Checkout from "./pages/Checkout.jsx";
 import Restaurant from "./pages/Restaurant.jsx";
@@ -13,10 +14,12 @@ import AppLayout from "./components/layout/AppLayout.jsx";
 export default function App() {
   return (
     <Routes>
-      {/* HOME — has its own Footer */}
-      <Route path="/" element={<Home />} />
 
-      {/* SECONDARY PAGES — use AppLayout */}
+      <Route
+        path="/"
+        element={<Home />}
+      />
+
       <Route
         path="/login"
         element={
@@ -31,6 +34,15 @@ export default function App() {
         element={
           <AppLayout>
             <Register />
+          </AppLayout>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <AppLayout>
+            <Profile />
           </AppLayout>
         }
       />
@@ -70,6 +82,7 @@ export default function App() {
           </AppLayout>
         }
       />
+
     </Routes>
   );
 }
