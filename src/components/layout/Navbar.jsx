@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 
 import "../css/Navbar.css";
@@ -16,43 +16,44 @@ export default function Navbar({
     logout,
   } = useAuth();
 
+  const navigate = useNavigate();
   const [profileOpen, setProfileOpen] = useState(false);
 
   function handleLogout() {
     setProfileOpen(false);
     logout();
+    navigate("/");
   }
+
+  const displayName = user?.firstName || user?.name || user?.email || "Account";
 
   return (
     <>
       <nav className="bap-navbar">
-
+        {/* LOGO */}
         <Link to="/" className="bap-logo">
-          <span className="bap-logo-icon">
-            🍔
-          </span>
-
+          <span className="bap-logo-icon">🍔</span>
           BOUF
-
-          <span className="bap-logo-accent">
-            À LAPORT
-          </span>
+          <span className="bap-logo-accent"> À LAPORT</span>
         </Link>
 
+        {/* NAVIGATION LINKS */}
         <div className="bap-nav-links">
+          <Link to="/">Home</Link>
 
           {showRestaurants && (
-            <Link to="/#restaurants">
-              Restaurants
-            </Link>
+            <Link to="/restaurants">Restaurants</Link>
           )}
 
           {showCategories && (
-            <Link to="/">
-              Categories
-            </Link>
+            <Link to="/#categories">Categories</Link>
           )}
 
+          {isAuthenticated && (
+            <Link to="/orders">Orders</Link>
+          )}
+
+          {/* AUTHENTICATION CONTROL */}
           {!loading && isAuthenticated && user ? (
             <button
               type="button"
@@ -60,29 +61,25 @@ export default function Navbar({
               onClick={() => setProfileOpen(true)}
             >
               <span>👤</span>
-
-              <span>
-                {user.firstName}
-              </span>
+              <span>{displayName}</span>
             </button>
           ) : !loading ? (
-            <Link to="/login">
-              Sign In
-            </Link>
+            <div className="bap-auth-links" style={{ display: "inline-flex", gap: "12px" }}>
+              <Link to="/login">Sign In</Link>
+              <Link to="/register">Register</Link>
+            </div>
           ) : null}
 
+          {/* CART */}
           {showCart && (
-            <Link
-              to="/cart"
-              className="bap-nav-cart"
-            >
+            <Link to="/cart" className="bap-nav-cart">
               🛒 Cart
             </Link>
           )}
-
         </div>
       </nav>
 
+      {/* PROFILE DRAWER */}
       {profileOpen && user && (
         <>
           <div
@@ -91,17 +88,10 @@ export default function Navbar({
           />
 
           <aside className="bap-profile-drawer">
-
             <div className="bap-profile-header">
-
               <div>
-                <span className="bap-profile-label">
-                  MY ACCOUNT
-                </span>
-
-                <h2>
-                  Welcome, {user.firstName}
-                </h2>
+                <span className="bap-profile-label">MY ACCOUNT</span>
+                <h2>Welcome, {user.firstName || displayName}</h2>
               </div>
 
               <button
@@ -112,57 +102,38 @@ export default function Navbar({
               >
                 ×
               </button>
-
             </div>
 
-            <div className="bap-profile-avatar">
-              👤
-            </div>
+            <div className="bap-profile-avatar">👤</div>
 
             <div className="bap-profile-name">
-              {user.firstName} {user.lastName}
+              {user.firstName && user.lastName
+                ? `${user.firstName} ${user.lastName}`
+                : displayName}
             </div>
 
-            <div className="bap-profile-role">
-              {user.role}
-            </div>
+            {user.role && (
+              <div className="bap-profile-role">{user.role}</div>
+            )}
 
             <div className="bap-profile-info">
-
               <div className="bap-profile-field">
-                <span>
-                  EMAIL
-                </span>
-
-                <strong>
-                  {user.email}
-                </strong>
+                <span>EMAIL</span>
+                <strong>{user.email || "Not provided"}</strong>
               </div>
 
               <div className="bap-profile-field">
-                <span>
-                  PHONE
-                </span>
-
-                <strong>
-                  {user.phone || "Not provided"}
-                </strong>
+                <span>PHONE</span>
+                <strong>{user.phone || "Not provided"}</strong>
               </div>
 
               <div className="bap-profile-field">
-                <span>
-                  ACCOUNT
-                </span>
-
-                <strong>
-                  {user.role}
-                </strong>
+                <span>ACCOUNT</span>
+                <strong>{user.role || "Customer"}</strong>
               </div>
-
             </div>
 
             <div className="bap-profile-actions">
-
               <Link
                 to="/"
                 className="bap-profile-home"
@@ -178,9 +149,7 @@ export default function Navbar({
               >
                 Sign Out
               </button>
-
             </div>
-
           </aside>
         </>
       )}
