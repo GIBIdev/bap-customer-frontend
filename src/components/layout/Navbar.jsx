@@ -1,158 +1,75 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
-
 import "../css/Navbar.css";
 
-export default function Navbar({
-  showCart = true,
-  showCategories = true,
-  showRestaurants = true,
-}) {
-  const {
-    user,
-    isAuthenticated,
-    loading,
-    logout,
-  } = useAuth();
+export default function Navbar() {
+  const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
 
-  const navigate = useNavigate();
-  const [profileOpen, setProfileOpen] = useState(false);
+  // Route state checks
+  const isHomePage = location.pathname === "/";
+  const isLoginPage = location.pathname === "/login";
+  const isRegisterPage = location.pathname === "/register";
 
-  function handleLogout() {
-    setProfileOpen(false);
-    logout();
-    navigate("/");
-  }
-
-  const displayName = user?.firstName || user?.name || user?.email || "Account";
+  const firstName =
+    user?.firstName ||
+    user?.name?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "Account";
 
   return (
-    <>
-      <nav className="bap-navbar">
-        {/* LOGO */}
-        <Link to="/" className="bap-logo">
-          <span className="bap-logo-icon">🍔</span>
-          BOUF
-          <span className="bap-logo-accent"> À LAPORT</span>
-        </Link>
+    <nav className="bap-navbar">
+      <Link to="/" className="bap-logo">
+        <span className="bap-logo-icon">🍔</span>
+        BOUF
+        <span className="bap-logo-accent"> À LAPORT</span>
+      </Link>
 
-        {/* NAVIGATION LINKS */}
-        <div className="bap-nav-links">
-          <Link to="/">Home</Link>
+      <div className="bap-nav-links">
+        {!isHomePage && <Link to="/">Home</Link>}
 
-          {showRestaurants && (
-            <Link to="/restaurants">Restaurants</Link>
-          )}
+        <a href="/#restaurants">Restaurants</a>
+        <a href="/#categories">Categories</a>
 
-          {showCategories && (
-            <Link to="/#categories">Categories</Link>
-          )}
+        {isAuthenticated && user ? (
+          <>
+            <Link to="/profile" className="bap-nav-account">
+              <span className="avatar-icon">👤</span>
+              <span>{firstName}</span>
+            </Link>
 
-          {isAuthenticated && (
-            <Link to="/orders">Orders</Link>
-          )}
-
-          {/* AUTHENTICATION CONTROL */}
-          {!loading && isAuthenticated && user ? (
             <button
               type="button"
-              className="bap-nav-account"
-              onClick={() => setProfileOpen(true)}
+              onClick={logout}
+              className="bap-logout-btn"
+              title="Sign out of your account"
             >
-              <span>👤</span>
-              <span>{displayName}</span>
+              <span>Logout</span>
+              <span style={{ fontSize: "14px" }}>🚪</span>
             </button>
-          ) : !loading ? (
-            <div className="bap-auth-links" style={{ display: "inline-flex", gap: "12px" }}>
-              <Link to="/login">Sign In</Link>
-              <Link to="/register">Register</Link>
-            </div>
-          ) : null}
+          </>
+        ) : (
+          <>
+            {/* 
+              AUTH BUTTON DISPLAY LOGIC:
+              - Hide 'Sign In' button when user is on '/login'
+              - Hide 'Register' button when user is on '/register'
+            */}
+            {!isLoginPage && <Link to="/login">Sign In</Link>}
 
-          {/* CART */}
-          {showCart && (
-            <Link to="/cart" className="bap-nav-cart">
-              🛒 Cart
-            </Link>
-          )}
-        </div>
-      </nav>
-
-      {/* PROFILE DRAWER */}
-      {profileOpen && user && (
-        <>
-          <div
-            className="bap-profile-overlay"
-            onClick={() => setProfileOpen(false)}
-          />
-
-          <aside className="bap-profile-drawer">
-            <div className="bap-profile-header">
-              <div>
-                <span className="bap-profile-label">MY ACCOUNT</span>
-                <h2>Welcome, {user.firstName || displayName}</h2>
-              </div>
-
-              <button
-                type="button"
-                className="bap-profile-close"
-                onClick={() => setProfileOpen(false)}
-                aria-label="Close profile"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="bap-profile-avatar">👤</div>
-
-            <div className="bap-profile-name">
-              {user.firstName && user.lastName
-                ? `${user.firstName} ${user.lastName}`
-                : displayName}
-            </div>
-
-            {user.role && (
-              <div className="bap-profile-role">{user.role}</div>
-            )}
-
-            <div className="bap-profile-info">
-              <div className="bap-profile-field">
-                <span>EMAIL</span>
-                <strong>{user.email || "Not provided"}</strong>
-              </div>
-
-              <div className="bap-profile-field">
-                <span>PHONE</span>
-                <strong>{user.phone || "Not provided"}</strong>
-              </div>
-
-              <div className="bap-profile-field">
-                <span>ACCOUNT</span>
-                <strong>{user.role || "Customer"}</strong>
-              </div>
-            </div>
-
-            <div className="bap-profile-actions">
-              <Link
-                to="/"
-                className="bap-profile-home"
-                onClick={() => setProfileOpen(false)}
-              >
-                ← Continue Ordering
+            {!isRegisterPage && (
+              <Link to="/register" className="registerButton">
+                Register
               </Link>
+            )}
+          </>
+        )}
 
-              <button
-                type="button"
-                className="bap-profile-logout"
-                onClick={handleLogout}
-              >
-                Sign Out
-              </button>
-            </div>
-          </aside>
-        </>
-      )}
-    </>
+        <Link to="/cart" className="bap-nav-cart">
+          🛒 Cart
+        </Link>
+      </div>
+    </nav>
   );
 }

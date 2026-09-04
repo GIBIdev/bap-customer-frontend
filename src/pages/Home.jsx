@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
+import Navbar from "../components/layout/Navbar";
 
 const restaurants = [
   {
@@ -84,7 +85,7 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const filteredRestaurants = restaurants.filter((restaurant) => {
     const matchesSearch =
@@ -100,10 +101,6 @@ export default function Home() {
     return matchesSearch && matchesCategory;
   });
 
-  function handleLogout() {
-    logout();
-  }
-
   const firstName =
     user?.firstName ||
     user?.name?.split(" ")[0] ||
@@ -112,55 +109,8 @@ export default function Home() {
 
   return (
     <div style={styles.page}>
-      {/* NAVBAR */}
-      <nav style={styles.navbar}>
-        <Link to="/" style={styles.logo}>
-          <span style={styles.logoIcon}>🍔</span>
-          BOUF
-          <span style={styles.logoAccent}> À LAPORT</span>
-        </Link>
-
-        <div style={styles.navLinks}>
-          <a href="#restaurants" style={styles.navLink}>
-            Restaurants
-          </a>
-
-          <a href="#categories" style={styles.navLink}>
-            Categories
-          </a>
-
-          {isAuthenticated && user ? (
-            <>
-              <Link to="/profile" style={styles.profileButton}>
-                <span style={styles.avatarIcon}>👤</span>
-                <span>{firstName}</span>
-              </Link>
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                style={styles.logoutButton}
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login" style={styles.loginButton}>
-                Sign In
-              </Link>
-
-              <Link to="/register" style={styles.registerButton}>
-                Register
-              </Link>
-            </>
-          )}
-
-          <Link to="/cart" style={styles.cartButton}>
-            🛒 Cart
-          </Link>
-        </div>
-      </nav>
+      {/* SHARED NAVBAR COMPONENT (Uses Navbar.css & index.css) */}
+      <Navbar />
 
       {/* HERO */}
       <section style={styles.hero}>
@@ -430,109 +380,6 @@ const styles = {
       "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
-  navbar: {
-    position: "sticky",
-    top: 0,
-    zIndex: 50,
-    minHeight: "76px",
-    padding: "0 6%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "rgba(255,255,255,0.96)",
-    borderBottom: "1px solid #eee",
-    backdropFilter: "blur(12px)",
-  },
-
-  logo: {
-    textDecoration: "none",
-    color: "#191919",
-    fontWeight: "900",
-    fontSize: "22px",
-    letterSpacing: "-0.8px",
-    display: "flex",
-    alignItems: "center",
-  },
-
-  logoIcon: {
-    fontSize: "25px",
-    marginRight: "7px",
-  },
-
-  logoAccent: {
-    color: "#ff5a1f",
-    marginLeft: "3px",
-  },
-
-  navLinks: {
-    display: "flex",
-    alignItems: "center",
-    gap: "22px",
-  },
-
-  navLink: {
-    color: "#555",
-    textDecoration: "none",
-    fontWeight: "600",
-    fontSize: "14px",
-  },
-
-  loginButton: {
-    textDecoration: "none",
-    color: "#191919",
-    fontWeight: "700",
-    fontSize: "14px",
-  },
-
-  registerButton: {
-    textDecoration: "none",
-    background: "#191919",
-    color: "#fff",
-    padding: "10px 17px",
-    borderRadius: "9px",
-    fontWeight: "700",
-    fontSize: "14px",
-  },
-
-  profileButton: {
-    textDecoration: "none",
-    color: "#191919",
-    fontWeight: "700",
-    fontSize: "14px",
-    display: "flex",
-    alignItems: "center",
-    gap: "7px",
-  },
-
-  avatarIcon: {
-    width: "30px",
-    height: "30px",
-    borderRadius: "50%",
-    display: "grid",
-    placeItems: "center",
-    background: "#fff1e9",
-    fontSize: "15px",
-  },
-
-  logoutButton: {
-    border: "none",
-    background: "transparent",
-    color: "#777",
-    fontWeight: "700",
-    fontSize: "14px",
-    cursor: "pointer",
-  },
-
-  cartButton: {
-    textDecoration: "none",
-    background: "#ff5a1f",
-    color: "#fff",
-    padding: "10px 17px",
-    borderRadius: "9px",
-    fontWeight: "800",
-    fontSize: "14px",
-  },
-
   hero: {
     maxWidth: "1250px",
     margin: "0 auto",
@@ -628,11 +475,6 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "5px",
-  },
-
-  statStrong: {
-    fontSize: "20px",
-    fontWeight: "900",
   },
 
   heroImageWrapper: {

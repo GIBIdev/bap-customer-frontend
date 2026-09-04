@@ -79,8 +79,6 @@ export default function Cart() {
    */
   if (cart.length === 0) {
     return (
-      <>
-        <Navbar showCart={false} showCategories={false} showRestaurants={false} />
 
         <div className="cart-page">
           <div className="cart-empty">
@@ -103,7 +101,6 @@ export default function Cart() {
             </Link>
           </div>
         </div>
-      </>
     );
   }
 
@@ -111,8 +108,6 @@ export default function Cart() {
    * CART WITH ITEMS
    */
   return (
-    <>
-      <Navbar />
 
       <div className="cart-page">
 
@@ -333,6 +328,5 @@ export default function Cart() {
         </div>
 
       </div>
-    </>
   );
 }

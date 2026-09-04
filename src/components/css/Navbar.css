@@ -52,7 +52,7 @@
 }
 
 /* =========================================================
-   NAVIGATION
+   NAVIGATION LINKS & YELLOW UNDERLINE
    ========================================================= */
 
 .bap-nav-links {
@@ -62,7 +62,9 @@
   gap: 26px;
 }
 
+/* General Link Styling */
 .bap-nav-links a {
+  position: relative;
   text-decoration: none;
 
   color: var(--bap-text);
@@ -70,13 +72,32 @@
   font-size: 14px;
   font-weight: 700;
 
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
+  padding-bottom: 4px;
+
+  transition: color var(--transition-fast);
+}
+
+/* Yellow Underline pseudo-element (EXCLUDES the Cart button) */
+.bap-nav-links a:not(.bap-nav-cart)::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 3px;
+  background-color: #ffd700; /* Yellow underline */
+  transition: width 0.3s ease, left 0.3s ease;
+  border-radius: 2px;
+}
+
+/* Underline expands from center on hover */
+.bap-nav-links a:not(.bap-nav-cart):hover::after {
+  width: 100%;
+  left: 0;
 }
 
 .bap-nav-links a:hover {
-  color: var(--bap-orange);
+  color: var(--bap-black);
 }
 
 /* =========================================================
@@ -106,133 +127,7 @@
 }
 
 /* =========================================================
-   MOBILE
-   ========================================================= */
-
-@media (max-width: 768px) {
-  .bap-navbar {
-    min-height: 68px;
-
-    padding: 0 18px;
-  }
-
-  .bap-logo {
-    font-size: 18px;
-  }
-
-  .bap-nav-links {
-    gap: 14px;
-  }
-
-  .bap-nav-links a {
-    font-size: 12px;
-  }
-
-  .bap-nav-cart {
-    padding: 9px 13px;
-  }
-}
-
-/* =========================================================
-   ACCOUNT
-   ========================================================= */
-
-.bap-nav-account {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  padding: 10px 12px;
-
-  border-radius: var(--radius-md);
-
-  background: var(--bap-bg);
-
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.bap-nav-account:hover {
-  background: var(--bap-border);
-}
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-.bap-nav-logout {
-  border: none;
-  background: transparent;
-
-  padding: 10px 4px;
-
-  color: var(--bap-text);
-
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: color var(--transition-fast);
-}
-
-.bap-nav-logout:hover {
-  color: var(--bap-orange);
-}
-
-/* =========================================================
-   ACCOUNT
-   ========================================================= */
-
-.bap-nav-account {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-
-  padding: 10px 12px;
-
-  border-radius: var(--radius-md);
-
-  background: var(--bap-bg);
-
-  transition:
-    color var(--transition-fast),
-    background var(--transition-fast);
-}
-
-.bap-nav-account:hover {
-  background: var(--bap-border);
-}
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-.bap-nav-logout {
-  border: none;
-  background: transparent;
-
-  padding: 10px 4px;
-
-  color: var(--bap-text);
-
-  font-family: inherit;
-  font-size: 14px;
-  font-weight: 700;
-
-  cursor: pointer;
-
-  transition: color var(--transition-fast);
-}
-
-.bap-nav-logout:hover {
-  color: var(--bap-orange);
-}
-
-/* =========================================================
-   PROFILE ACCOUNT BUTTON
+   ACCOUNT / PROFILE BUTTON
    ========================================================= */
 
 .bap-nav-account {
@@ -268,7 +163,6 @@
   transform: translateY(-1px);
 }
 
-
 /* =========================================================
    PROFILE OVERLAY
    ========================================================= */
@@ -284,7 +178,6 @@
 
   backdrop-filter: blur(3px);
 }
-
 
 /* =========================================================
    PROFILE DRAWER
@@ -307,8 +200,7 @@
 
   background: #fff;
 
-  box-shadow:
-    -12px 0 40px rgba(0, 0, 0, 0.14);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.14);
 
   animation: bap-profile-slide-in 0.25s ease-out;
 }
@@ -322,7 +214,6 @@
     transform: translateX(0);
   }
 }
-
 
 /* =========================================================
    PROFILE HEADER
@@ -382,7 +273,6 @@
   background: var(--bap-border);
 }
 
-
 /* =========================================================
    PROFILE AVATAR
    ========================================================= */
@@ -403,8 +293,7 @@
 
   font-size: 42px;
 
-  box-shadow:
-    0 10px 25px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
 }
 
 .bap-profile-name {
@@ -434,7 +323,6 @@
 
   letter-spacing: 0.7px;
 }
-
 
 /* =========================================================
    PROFILE INFORMATION
@@ -477,7 +365,6 @@
 
   word-break: break-word;
 }
-
 
 /* =========================================================
    PROFILE ACTIONS
@@ -551,12 +438,40 @@
   color: var(--bap-orange);
 }
 
-
 /* =========================================================
    MOBILE
    ========================================================= */
 
 @media (max-width: 768px) {
+  .bap-navbar {
+    min-height: 68px;
+
+    padding: 0 18px;
+  }
+
+  .bap-logo {
+    font-size: 18px;
+  }
+
+/* =========================================================
+   NAVIGATION LINKS
+   ========================================================= */
+
+  .bap-nav-links {
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+
+  .bap-nav-links a {
+    color: var(--bap-text);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .bap-nav-cart {
+    padding: 9px 13px;
+  }
 
   .bap-profile-drawer {
     width: min(380px, 94vw);
@@ -571,4 +486,61 @@
   .bap-nav-account {
     padding: 9px 10px;
   }
+}
+/* =========================================================
+   REGISTER BUTTON (Circled/Pill Black Background)
+   ========================================================= */
+.bap-nav-links .registerButton {
+  background-color: #191919;
+  color: #ffffff !important;
+  padding: 9px 20px !important;
+  border-radius: 999px !important; /* Full rounded pill/circle edges */
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bap-nav-links .registerButton:hover {
+  background-color: #333333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.bap-nav-links .registerButton:active {
+  transform: translateY(0);
+}
+
+
+/* =========================================================
+   LOGOUT BUTTON (Prettier Soft Theme Button)
+   ========================================================= */
+.bap-logout-btn {
+  background-color: #f5f5f5;
+  color: #555555;
+  border: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  border-radius: 999px; /* Pill shape to match Register style */
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.bap-logout-btn:hover {
+  background-color: #fff0f0;  /* Subtle red warning tint */
+  color: #e53935;             /* Red accent on hover */
+  border-color: #ffcdd2;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(229, 57, 53, 0.12);
+}
+
+.bap-logout-btn:active {
+  transform: translateY(0);
 }
