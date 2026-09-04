@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../context/AuthContext.jsx";
 
 const restaurants = [
   {
@@ -83,6 +84,8 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
 
+  const { user, isAuthenticated, logout } = useAuth();
+
   const filteredRestaurants = restaurants.filter((restaurant) => {
     const matchesSearch =
       restaurant.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -90,10 +93,22 @@ export default function Home() {
 
     const matchesCategory =
       selectedCategory === "All" ||
-      restaurant.cuisine.toLowerCase().includes(selectedCategory.toLowerCase());
+      restaurant.cuisine
+        .toLowerCase()
+        .includes(selectedCategory.toLowerCase());
 
     return matchesSearch && matchesCategory;
   });
+
+  function handleLogout() {
+    logout();
+  }
+
+  const firstName =
+    user?.firstName ||
+    user?.name?.split(" ")[0] ||
+    user?.email?.split("@")[0] ||
+    "Food Lover";
 
   return (
     <div style={styles.page}>
@@ -101,20 +116,45 @@ export default function Home() {
       <nav style={styles.navbar}>
         <Link to="/" style={styles.logo}>
           <span style={styles.logoIcon}>🍔</span>
-          BOUF<span style={styles.logoAccent}> À LAPORT</span>
+          BOUF
+          <span style={styles.logoAccent}> À LAPORT</span>
         </Link>
 
         <div style={styles.navLinks}>
           <a href="#restaurants" style={styles.navLink}>
             Restaurants
           </a>
+
           <a href="#categories" style={styles.navLink}>
             Categories
           </a>
 
-          <Link to="/login" style={styles.loginButton}>
-            Sign In
-          </Link>
+          {isAuthenticated && user ? (
+            <>
+              <Link to="/profile" style={styles.profileButton}>
+                <span style={styles.avatarIcon}>👤</span>
+                <span>{firstName}</span>
+              </Link>
+
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={styles.logoutButton}
+              >
+                Logout
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={styles.loginButton}>
+                Sign In
+              </Link>
+
+              <Link to="/register" style={styles.registerButton}>
+                Register
+              </Link>
+            </>
+          )}
 
           <Link to="/cart" style={styles.cartButton}>
             🛒 Cart
@@ -125,17 +165,34 @@ export default function Home() {
       {/* HERO */}
       <section style={styles.hero}>
         <div style={styles.heroContent}>
-          <div style={styles.badge}>🔥 Delicious food, delivered fast</div>
+          <div style={styles.badge}>
+            {isAuthenticated && user
+              ? `👋 Welcome back, ${firstName}!`
+              : "🔥 Delicious food, delivered fast"}
+          </div>
 
           <h1 style={styles.heroTitle}>
-            Your favorite food.
-            <br />
-            <span style={styles.heroAccent}>Delivered to you.</span>
+            {isAuthenticated && user ? (
+              <>
+                Hello, {firstName}!
+                <br />
+                <span style={styles.heroAccent}>Ready to order?</span>
+              </>
+            ) : (
+              <>
+                Your favorite food.
+                <br />
+                <span style={styles.heroAccent}>
+                  Delivered to you.
+                </span>
+              </>
+            )}
           </h1>
 
           <p style={styles.heroText}>
-            Discover the best restaurants around you and get your favorite
-            meals delivered right to your door.
+            {isAuthenticated && user
+              ? "Welcome back! Discover new restaurants and get your favorite meals delivered right to your door."
+              : "Discover the best restaurants around you and get your favorite meals delivered right to your door."}
           </p>
 
           <div style={styles.searchBox}>
@@ -149,21 +206,31 @@ export default function Home() {
               style={styles.searchInput}
             />
 
-            <button style={styles.searchButton}>Search</button>
+            <button
+              type="button"
+              style={styles.searchButton}
+              onClick={() =>
+                document
+                  .getElementById("restaurants")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
+            >
+              Search
+            </button>
           </div>
 
           <div style={styles.heroStats}>
-            <div>
+            <div style={styles.stat}>
               <strong>500+</strong>
               <span>Restaurants</span>
             </div>
 
-            <div>
+            <div style={styles.stat}>
               <strong>30 min</strong>
               <span>Average delivery</span>
             </div>
 
-            <div>
+            <div style={styles.stat}>
               <strong>4.8 ⭐</strong>
               <span>Average rating</span>
             </div>
@@ -179,6 +246,7 @@ export default function Home() {
 
           <div style={styles.deliveryCard}>
             <div style={styles.deliveryIcon}>🚴</div>
+
             <div>
               <strong>Fast delivery</strong>
               <p>Your food is on the way!</p>
@@ -192,16 +260,21 @@ export default function Home() {
         <div style={styles.sectionHeader}>
           <div>
             <p style={styles.smallTitle}>EXPLORE</p>
-            <h2 style={styles.sectionTitle}>What are you craving?</h2>
+            <h2 style={styles.sectionTitle}>
+              What are you craving?
+            </h2>
           </div>
         </div>
 
         <div style={styles.categories}>
           <button
+            type="button"
             onClick={() => setSelectedCategory("All")}
             style={{
               ...styles.category,
-              ...(selectedCategory === "All" ? styles.categoryActive : {}),
+              ...(selectedCategory === "All"
+                ? styles.categoryActive
+                : {}),
             }}
           >
             <span style={styles.categoryIcon}>✨</span>
@@ -210,6 +283,7 @@ export default function Home() {
 
           {categories.map((category) => (
             <button
+              type="button"
               key={category.name}
               onClick={() => setSelectedCategory(category.name)}
               style={{
@@ -219,7 +293,9 @@ export default function Home() {
                   : {}),
               }}
             >
-              <span style={styles.categoryIcon}>{category.icon}</span>
+              <span style={styles.categoryIcon}>
+                {category.icon}
+              </span>
               <span>{category.name}</span>
             </button>
           ))}
@@ -231,7 +307,9 @@ export default function Home() {
         <div style={styles.sectionHeader}>
           <div>
             <p style={styles.smallTitle}>TOP PICKS FOR YOU</p>
-            <h2 style={styles.sectionTitle}>Popular near you</h2>
+            <h2 style={styles.sectionTitle}>
+              Popular near you
+            </h2>
           </div>
 
           <span style={styles.restaurantCount}>
@@ -241,7 +319,7 @@ export default function Home() {
 
         {filteredRestaurants.length === 0 ? (
           <div style={styles.empty}>
-            <div style={{ fontSize: "50px" }}>😕</div>
+            <div style={styles.emptyEmoji}>😕</div>
             <h3>No restaurants found</h3>
             <p>Try searching for something else.</p>
           </div>
@@ -269,14 +347,18 @@ export default function Home() {
 
                 <div style={styles.cardContent}>
                   <div style={styles.cardTitleRow}>
-                    <h3 style={styles.restaurantName}>{restaurant.name}</h3>
+                    <h3 style={styles.restaurantName}>
+                      {restaurant.name}
+                    </h3>
 
                     <div style={styles.rating}>
                       ⭐ {restaurant.rating}
                     </div>
                   </div>
 
-                  <p style={styles.cuisine}>{restaurant.cuisine}</p>
+                  <p style={styles.cuisine}>
+                    {restaurant.cuisine}
+                  </p>
 
                   <div style={styles.details}>
                     <span>🕐 {restaurant.time}</span>
@@ -297,7 +379,10 @@ export default function Home() {
       {/* PROMO */}
       <section style={styles.promo}>
         <div>
-          <p style={styles.promoSmall}>WELCOME TO BOUF À LAPORT</p>
+          <p style={styles.promoSmall}>
+            WELCOME TO BOUF À LAPORT
+          </p>
+
           <h2 style={styles.promoTitle}>
             Hungry? We've got
             <br />
@@ -305,8 +390,8 @@ export default function Home() {
           </h2>
 
           <p style={styles.promoText}>
-            Order from your favorite local restaurants and enjoy delicious
-            meals without leaving home.
+            Order from your favorite local restaurants and
+            enjoy delicious meals without leaving home.
           </p>
 
           <Link to="/login" style={styles.promoButton}>
@@ -320,7 +405,10 @@ export default function Home() {
       {/* FOOTER */}
       <footer style={styles.footer}>
         <div>
-          <div style={styles.footerLogo}>🍔 BOUF À LAPORT</div>
+          <div style={styles.footerLogo}>
+            🍔 BOUF À LAPORT
+          </div>
+
           <p>Food you love. Delivered with care.</p>
         </div>
 
@@ -336,149 +424,196 @@ export default function Home() {
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#fafafa",
+    background: "#faf9f7",
     color: "#191919",
     fontFamily:
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
   },
 
   navbar: {
-    height: "76px",
-    padding: "0 7%",
+    position: "sticky",
+    top: 0,
+    zIndex: 50,
+    minHeight: "76px",
+    padding: "0 6%",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    background: "#ffffff",
-    borderBottom: "1px solid #eeeeee",
-    position: "sticky",
-    top: 0,
-    zIndex: 20,
+    background: "rgba(255,255,255,0.96)",
+    borderBottom: "1px solid #eee",
+    backdropFilter: "blur(12px)",
   },
 
   logo: {
     textDecoration: "none",
-    color: "#171717",
-    fontSize: "21px",
+    color: "#191919",
     fontWeight: "900",
-    letterSpacing: "-0.7px",
+    fontSize: "22px",
+    letterSpacing: "-0.8px",
+    display: "flex",
+    alignItems: "center",
   },
 
   logoIcon: {
-    marginRight: "8px",
+    fontSize: "25px",
+    marginRight: "7px",
   },
 
   logoAccent: {
-    color: "#ff4f0a",
+    color: "#ff5a1f",
+    marginLeft: "3px",
   },
 
   navLinks: {
     display: "flex",
     alignItems: "center",
-    gap: "26px",
+    gap: "22px",
   },
 
   navLink: {
-    textDecoration: "none",
     color: "#555",
-    fontSize: "14px",
+    textDecoration: "none",
     fontWeight: "600",
+    fontSize: "14px",
   },
 
   loginButton: {
     textDecoration: "none",
-    color: "#222",
+    color: "#191919",
     fontWeight: "700",
     fontSize: "14px",
   },
 
+  registerButton: {
+    textDecoration: "none",
+    background: "#191919",
+    color: "#fff",
+    padding: "10px 17px",
+    borderRadius: "9px",
+    fontWeight: "700",
+    fontSize: "14px",
+  },
+
+  profileButton: {
+    textDecoration: "none",
+    color: "#191919",
+    fontWeight: "700",
+    fontSize: "14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "7px",
+  },
+
+  avatarIcon: {
+    width: "30px",
+    height: "30px",
+    borderRadius: "50%",
+    display: "grid",
+    placeItems: "center",
+    background: "#fff1e9",
+    fontSize: "15px",
+  },
+
+  logoutButton: {
+    border: "none",
+    background: "transparent",
+    color: "#777",
+    fontWeight: "700",
+    fontSize: "14px",
+    cursor: "pointer",
+  },
+
   cartButton: {
     textDecoration: "none",
-    background: "#ff4f0a",
-    color: "white",
-    padding: "11px 18px",
-    borderRadius: "10px",
+    background: "#ff5a1f",
+    color: "#fff",
+    padding: "10px 17px",
+    borderRadius: "9px",
     fontWeight: "800",
     fontSize: "14px",
   },
 
   hero: {
-    minHeight: "540px",
-    padding: "70px 7%",
+    maxWidth: "1250px",
+    margin: "0 auto",
+    padding: "80px 6% 70px",
     display: "grid",
     gridTemplateColumns: "1.05fr 0.95fr",
-    gap: "60px",
+    gap: "55px",
     alignItems: "center",
-    background:
-      "linear-gradient(135deg, #fff7f1 0%, #fff 55%, #fff1e9 100%)",
-    boxSizing: "border-box",
   },
 
   heroContent: {
-    maxWidth: "680px",
+    maxWidth: "650px",
   },
 
   badge: {
-    display: "inline-block",
-    background: "#fff0e9",
-    color: "#e54805",
+    display: "inline-flex",
+    alignItems: "center",
     padding: "9px 15px",
-    borderRadius: "30px",
+    borderRadius: "999px",
+    background: "#fff0e8",
+    color: "#e84d16",
     fontSize: "13px",
     fontWeight: "800",
-    marginBottom: "20px",
+    marginBottom: "22px",
   },
 
   heroTitle: {
-    fontSize: "58px",
-    lineHeight: "1.02",
-    letterSpacing: "-3px",
-    margin: "0 0 22px",
+    fontSize: "clamp(46px, 6vw, 76px)",
+    lineHeight: "0.98",
+    letterSpacing: "-4px",
+    margin: "0 0 25px",
     fontWeight: "900",
   },
 
   heroAccent: {
-    color: "#ff4f0a",
+    color: "#ff5a1f",
   },
 
   heroText: {
+    fontSize: "18px",
+    lineHeight: "1.65",
     color: "#666",
-    fontSize: "17px",
-    lineHeight: "1.7",
     maxWidth: "570px",
-    marginBottom: "30px",
+    margin: "0 0 30px",
   },
 
   searchBox: {
+    height: "62px",
     display: "flex",
     alignItems: "center",
-    background: "white",
-    border: "1px solid #e5e5e5",
-    borderRadius: "14px",
-    padding: "7px",
-    maxWidth: "610px",
-    boxShadow: "0 12px 35px rgba(0,0,0,0.08)",
+    background: "#fff",
+    border: "1px solid #e6e2de",
+    borderRadius: "15px",
+    padding: "6px",
+    boxShadow: "0 12px 35px rgba(0,0,0,0.07)",
+    maxWidth: "620px",
   },
 
   searchIcon: {
     fontSize: "19px",
-    marginLeft: "13px",
+    marginLeft: "15px",
   },
 
   searchInput: {
     flex: 1,
+    minWidth: 0,
     border: "none",
     outline: "none",
-    padding: "14px 12px",
     fontSize: "15px",
+    padding: "0 14px",
+    color: "#222",
     background: "transparent",
   },
 
   searchButton: {
     border: "none",
-    background: "#ff4f0a",
-    color: "white",
-    padding: "13px 23px",
-    borderRadius: "10px",
+    background: "#ff5a1f",
+    color: "#fff",
+    height: "50px",
+    padding: "0 23px",
+    borderRadius: "11px",
     fontWeight: "800",
     cursor: "pointer",
   },
@@ -486,11 +621,18 @@ const styles = {
   heroStats: {
     display: "flex",
     gap: "38px",
-    marginTop: "34px",
+    marginTop: "38px",
   },
 
-  heroStat: {
+  stat: {
     display: "flex",
+    flexDirection: "column",
+    gap: "5px",
+  },
+
+  statStrong: {
+    fontSize: "20px",
+    fontWeight: "900",
   },
 
   heroImageWrapper: {
@@ -499,119 +641,125 @@ const styles = {
 
   heroImage: {
     width: "100%",
-    height: "420px",
+    height: "540px",
     objectFit: "cover",
-    borderRadius: "28px",
-    boxShadow: "0 25px 60px rgba(0,0,0,0.15)",
+    borderRadius: "30px",
+    display: "block",
+    boxShadow: "0 25px 70px rgba(0,0,0,0.14)",
   },
 
   deliveryCard: {
     position: "absolute",
-    bottom: "25px",
     left: "-25px",
-    background: "white",
-    borderRadius: "15px",
-    padding: "14px 18px",
+    bottom: "30px",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    boxShadow: "0 15px 40px rgba(0,0,0,0.15)",
+    gap: "13px",
+    padding: "16px 20px",
+    background: "#fff",
+    borderRadius: "15px",
+    boxShadow: "0 15px 40px rgba(0,0,0,0.14)",
   },
 
   deliveryIcon: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "50%",
-    background: "#fff0e9",
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
+    background: "#fff0e8",
     display: "grid",
     placeItems: "center",
-    fontSize: "21px",
+    fontSize: "22px",
   },
 
   section: {
-    padding: "65px 7% 35px",
+    maxWidth: "1250px",
+    margin: "0 auto",
+    padding: "65px 6% 30px",
   },
 
   restaurantSection: {
-    padding: "25px 7% 75px",
+    maxWidth: "1250px",
+    margin: "0 auto",
+    padding: "45px 6% 80px",
   },
 
   sectionHeader: {
     display: "flex",
-    alignItems: "end",
     justifyContent: "space-between",
-    marginBottom: "28px",
+    alignItems: "end",
+    marginBottom: "25px",
   },
 
   smallTitle: {
-    color: "#ff4f0a",
-    fontSize: "11px",
+    margin: "0 0 7px",
+    color: "#ff5a1f",
+    fontSize: "12px",
     fontWeight: "900",
     letterSpacing: "1.5px",
-    margin: "0 0 7px",
   },
 
   sectionTitle: {
     margin: 0,
-    fontSize: "30px",
-    letterSpacing: "-1px",
+    fontSize: "32px",
+    letterSpacing: "-1.3px",
     fontWeight: "900",
   },
 
   categories: {
     display: "flex",
-    gap: "14px",
+    gap: "13px",
     flexWrap: "wrap",
   },
 
   category: {
-    border: "1px solid #e5e5e5",
-    background: "white",
-    padding: "14px 22px",
-    borderRadius: "14px",
+    border: "1px solid #e7e2dd",
+    background: "#fff",
+    color: "#333",
+    padding: "13px 18px",
+    borderRadius: "13px",
     display: "flex",
     alignItems: "center",
-    gap: "9px",
-    cursor: "pointer",
+    gap: "8px",
     fontWeight: "700",
-    fontSize: "14px",
+    cursor: "pointer",
   },
 
   categoryActive: {
-    background: "#ff4f0a",
-    color: "white",
-    borderColor: "#ff4f0a",
+    background: "#191919",
+    color: "#fff",
+    borderColor: "#191919",
   },
 
   categoryIcon: {
-    fontSize: "22px",
+    fontSize: "20px",
   },
 
   restaurantCount: {
-    color: "#777",
+    color: "#888",
     fontSize: "14px",
-    fontWeight: "600",
+    fontWeight: "700",
   },
 
   grid: {
     display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateColumns:
+      "repeat(auto-fit, minmax(280px, 1fr))",
     gap: "24px",
   },
 
   card: {
-    background: "white",
+    background: "#fff",
     borderRadius: "18px",
     overflow: "hidden",
     textDecoration: "none",
-    color: "inherit",
-    border: "1px solid #eeeeee",
-    transition: "transform 0.2s, box-shadow 0.2s",
+    color: "#191919",
+    border: "1px solid #eee",
+    transition: "transform 0.2s ease",
   },
 
   imageContainer: {
-    height: "220px",
     position: "relative",
+    height: "220px",
     overflow: "hidden",
   },
 
@@ -619,12 +767,13 @@ const styles = {
     width: "100%",
     height: "100%",
     objectFit: "cover",
+    display: "block",
   },
 
   favorite: {
     position: "absolute",
-    top: "13px",
-    right: "13px",
+    right: "14px",
+    top: "14px",
     width: "38px",
     height: "38px",
     borderRadius: "50%",
@@ -636,12 +785,12 @@ const styles = {
 
   deliveryBadge: {
     position: "absolute",
-    bottom: "12px",
-    left: "12px",
-    background: "white",
+    left: "13px",
+    bottom: "13px",
+    background: "#fff",
     padding: "7px 10px",
     borderRadius: "8px",
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: "800",
   },
 
@@ -652,106 +801,107 @@ const styles = {
   cardTitleRow: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
     gap: "10px",
+    alignItems: "center",
   },
 
   restaurantName: {
     margin: 0,
-    fontSize: "18px",
-    fontWeight: "850",
+    fontSize: "19px",
+    fontWeight: "900",
   },
 
   rating: {
-    background: "#fff6df",
-    padding: "6px 8px",
-    borderRadius: "7px",
-    fontSize: "12px",
+    fontSize: "13px",
     fontWeight: "800",
     whiteSpace: "nowrap",
   },
 
   cuisine: {
+    margin: "7px 0",
     color: "#777",
-    fontSize: "13px",
-    margin: "7px 0 14px",
+    fontSize: "14px",
   },
 
   details: {
     display: "flex",
-    gap: "8px",
+    gap: "7px",
     color: "#555",
-    fontSize: "12px",
-    fontWeight: "600",
+    fontSize: "13px",
   },
 
   reviews: {
+    margin: "10px 0 0",
     color: "#999",
-    fontSize: "11px",
-    margin: "9px 0 0",
+    fontSize: "12px",
   },
 
   empty: {
     textAlign: "center",
     padding: "70px 20px",
-    background: "white",
-    borderRadius: "20px",
+    background: "#fff",
+    borderRadius: "18px",
     border: "1px solid #eee",
   },
 
+  emptyEmoji: {
+    fontSize: "50px",
+  },
+
   promo: {
-    margin: "0 7% 70px",
-    padding: "55px 65px",
-    borderRadius: "25px",
+    maxWidth: "1130px",
+    margin: "20px auto 80px",
+    padding: "55px",
+    borderRadius: "28px",
     background: "#191919",
-    color: "white",
+    color: "#fff",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    overflow: "hidden",
+    gap: "30px",
   },
 
   promoSmall: {
-    color: "#ff7040",
-    fontSize: "11px",
+    color: "#ff7a47",
     fontWeight: "900",
+    fontSize: "12px",
     letterSpacing: "1.5px",
   },
 
   promoTitle: {
-    fontSize: "38px",
-    lineHeight: "1.1",
-    margin: "10px 0 15px",
-    letterSpacing: "-1.5px",
+    fontSize: "42px",
+    lineHeight: "1.05",
+    letterSpacing: "-1.8px",
+    margin: "12px 0",
   },
 
   promoText: {
-    color: "#aaa",
-    maxWidth: "500px",
+    maxWidth: "560px",
+    color: "#bbb",
     lineHeight: "1.6",
   },
 
   promoButton: {
     display: "inline-block",
-    marginTop: "15px",
+    marginTop: "10px",
     padding: "13px 20px",
-    background: "#ff4f0a",
-    color: "white",
     borderRadius: "10px",
+    background: "#ff5a1f",
+    color: "#fff",
     textDecoration: "none",
     fontWeight: "800",
   },
 
   promoEmoji: {
-    fontSize: "150px",
-    transform: "rotate(-10deg)",
+    fontSize: "100px",
   },
 
   footer: {
-    borderTop: "1px solid #e8e8e8",
-    padding: "35px 7%",
+    padding: "35px 6%",
+    borderTop: "1px solid #e8e4df",
     display: "flex",
     justifyContent: "space-between",
+    gap: "30px",
     color: "#777",
     fontSize: "13px",
   },
