@@ -1,75 +1,10 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
-const restaurants = [
-  {
-    id: "1",
-    name: "Burger House",
-    cuisine: "Burgers • American",
-    rating: "4.8",
-    reviews: "1,240",
-    time: "20–30 min",
-    fee: "$0.99 delivery",
-    image:
-      "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: "2",
-    name: "Sushi World",
-    cuisine: "Japanese • Sushi",
-    rating: "4.9",
-    reviews: "980",
-    time: "25–35 min",
-    fee: "$1.49 delivery",
-    image:
-      "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: "3",
-    name: "Bella Pizza",
-    cuisine: "Pizza • Italian",
-    rating: "4.7",
-    reviews: "2,130",
-    time: "25–40 min",
-    fee: "$0.49 delivery",
-    image:
-      "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: "4",
-    name: "Taco Fiesta",
-    cuisine: "Mexican • Tacos",
-    rating: "4.8",
-    reviews: "870",
-    time: "15–25 min",
-    fee: "$0.99 delivery",
-    image:
-      "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: "5",
-    name: "Green Bowl",
-    cuisine: "Healthy • Salads",
-    rating: "4.6",
-    reviews: "640",
-    time: "15–25 min",
-    fee: "$0.00 delivery",
-    image:
-      "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    id: "6",
-    name: "Sweet Bakery",
-    cuisine: "Desserts • Bakery",
-    rating: "4.9",
-    reviews: "1,540",
-    time: "15–20 min",
-    fee: "$0.99 delivery",
-    image:
-      "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&w=900&q=85",
-  },
-];
+const API_URL =
+  import.meta.env.VITE_API_URL?.replace(/\/$/, "") ||
+  "http://localhost:3000/api/v1";
 
 const categories = [
   { icon: "🍔", name: "Burgers" },
@@ -80,44 +15,266 @@ const categories = [
   { icon: "🍰", name: "Desserts" },
 ];
 
+const FALLBACK_IMAGE =
+  "https://placehold.co/900x600/ff4f0a/ffffff?text=BOUF+A+LAPORT";
+
 export default function Home() {
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [notification, setNotification] = useState(null);
 
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  const filteredRestaurants = restaurants.filter((restaurant) => {
-    const matchesSearch =
-      restaurant.name.toLowerCase().includes(search.toLowerCase()) ||
-      restaurant.cuisine.toLowerCase().includes(search.toLowerCase());
+  /**
+   * Fetch restaurants from the production API.
+   *
+   * VITE_API_URL should be configured per environment:
+   *
+   * Development:
+   * VITE_API_URL=http://localhost:3000/api/v1
+   *
+   * Production:
+   * VITE_API_URL=https://api.yourdomain.com/api/v1
+   */
+  const fetchRestaurants = useCallback(async (signal) => {
+    try {
+      setLoading(true);
+      setError("");
 
-    const matchesCategory =
-      selectedCategory === "All" ||
-      restaurant.cuisine
-        .toLowerCase()
-        .includes(selectedCategory.toLowerCase());
+      const response = await fetch(`${API_URL}/restaurants`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        signal,
+      });
 
-    return matchesSearch && matchesCategory;
-  });
+      if (!response.ok) {
+        throw new Error(
+          `Restaurant API returned HTTP ${response.status}`
+        );
+      }
 
-  function handleLogout() {
-    logout();
+      const data = await response.json();
+
+      if (!Array.isArray(data)) {
+        throw new Error("Invalid restaurant response from API");
+      }
+
+      setRestaurants(data);
+    } catch (err) {
+      // Ignore intentional AbortController cancellation.
+      if (err.name === "AbortError") {
+        return;
+      }
+
+      console.error("Failed to load restaurants:", err);
+
+      setRestaurants([]);
+      setError(
+        "We couldn't load restaurants right now. Please try again."
+      );
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetchRestaurants(controller.signal);
+
+    return () => controller.abort();
+  }, [fetchRestaurants]);
+
+  /**
+   * Safely display a notification and automatically remove it.
+   */
+  const showNotification = useCallback((message) => {
+    setNotification(message);
+
+    window.setTimeout(() => {
+      setNotification(null);
+    }, 2500);
+  }, []);
+
+  /**
+   * Add a menu item to the local cart.
+   */
+  const addToCart = useCallback(
+    (restaurant, item) => {
+      if (!restaurant?.id || !item?.id) {
+        showNotification("Unable to add this item to your cart.");
+        return;
+      }
+
+      try {
+        const storedCart = localStorage.getItem("cart");
+
+        let cart = [];
+
+        if (storedCart) {
+          const parsedCart = JSON.parse(storedCart);
+
+          if (Array.isArray(parsedCart)) {
+            cart = parsedCart;
+          }
+        }
+
+        const existingItem = cart.find(
+          (cartItem) =>
+            cartItem.id === item.id &&
+            cartItem.restaurantId === restaurant.id
+        );
+
+        if (existingItem) {
+          existingItem.quantity =
+            Number(existingItem.quantity || 0) + 1;
+        } else {
+          const price =
+            Number(item.price) > 0 ? Number(item.price) : 9.99;
+
+          cart.push({
+            id: item.id,
+            name: item.name || "Menu item",
+            priceCents: Math.round(price * 100),
+            quantity: 1,
+            description: item.description || "",
+            image: restaurant.image || FALLBACK_IMAGE,
+            restaurantName: restaurant.name || "Restaurant",
+            restaurantId: restaurant.id,
+          });
+        }
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+
+        showNotification(`✅ ${item.name || "Item"} added to cart!`);
+      } catch (err) {
+        console.error("Cart update failed:", err);
+        showNotification(
+          "Unable to update your cart. Please try again."
+        );
+      }
+    },
+    [showNotification]
+  );
+
+  const handleRestaurantClick = useCallback(
+    (restaurantId) => {
+      if (!restaurantId) return;
+
+      navigate(`/restaurant/${restaurantId}`);
+    },
+    [navigate]
+  );
+
+  /**
+   * Filter restaurants safely.
+   */
+  const filteredRestaurants = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+    const normalizedCategory = selectedCategory.toLowerCase();
+
+    return restaurants.filter((restaurant) => {
+      const name = String(restaurant?.name || "").toLowerCase();
+      const cuisine = String(restaurant?.cuisine || "").toLowerCase();
+
+      const matchesSearch =
+        !normalizedSearch ||
+        name.includes(normalizedSearch) ||
+        cuisine.includes(normalizedSearch);
+
+      const matchesCategory =
+        selectedCategory === "All" ||
+        cuisine.includes(normalizedCategory);
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [restaurants, search, selectedCategory]);
+
+  /**
+   * Get the first available menu item.
+   */
+  const getFirstMenuItem = useCallback((restaurant) => {
+    if (
+      Array.isArray(restaurant?.menuItems) &&
+      restaurant.menuItems.length > 0
+    ) {
+      return restaurant.menuItems[0];
+    }
+
+    return null;
+  }, []);
+
+  /**
+   * Format delivery fee safely.
+   */
+  const formatDeliveryFee = (fee) => {
+    const numericFee = Number(fee);
+
+    if (!Number.isFinite(numericFee) || numericFee === 0) {
+      return "Free delivery";
+    }
+
+    return `$${numericFee.toFixed(2)} delivery`;
+  };
+
+  /**
+   * Format restaurant rating safely.
+   */
+  const formatRating = (rating) => {
+    const numericRating = Number(rating);
+
+    if (!Number.isFinite(numericRating)) {
+      return "New";
+    }
+
+    return numericRating.toFixed(1);
+  };
+
+  /**
+   * Handle restaurant image failures.
+   */
+  const handleImageError = (event) => {
+    if (event.currentTarget.src !== FALLBACK_IMAGE) {
+      event.currentTarget.src = FALLBACK_IMAGE;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div style={styles.page}>
+        <div style={styles.loading}>
+          Loading restaurants...
+        </div>
+      </div>
+    );
   }
-
-  const firstName =
-    user?.firstName ||
-    user?.name?.split(" ")[0] ||
-    user?.email?.split("@")[0] ||
-    "Food Lover";
 
   return (
     <div style={styles.page}>
+      {/* Notification */}
+      {notification && (
+        <div
+          style={styles.notification}
+          role="status"
+          aria-live="polite"
+        >
+          {notification}
+        </div>
+      )}
+
       {/* NAVBAR */}
       <nav style={styles.navbar}>
-        <Link to="/" style={styles.logo}>
+        <Link to="/" style={styles.logo} aria-label="BOUF À LAPORT home">
           <span style={styles.logoIcon}>🍔</span>
-          BOUF
-          <span style={styles.logoAccent}> À LAPORT</span>
+          BOUF<span style={styles.logoAccent}> À LAPORT</span>
         </Link>
 
         <div style={styles.navLinks}>
@@ -132,17 +289,12 @@ export default function Home() {
           {isAuthenticated && user ? (
             <>
               <Link to="/profile" style={styles.profileButton}>
-                <span style={styles.avatarIcon}>👤</span>
-                <span>{firstName}</span>
+                👤 {user.name || user.email}
               </Link>
 
-              <button
-                type="button"
-                onClick={handleLogout}
-                style={styles.logoutButton}
-              >
-                Logout
-              </button>
+              <Link to="/cart" style={styles.cartButton}>
+                🛒 Cart
+              </Link>
             </>
           ) : (
             <>
@@ -153,12 +305,12 @@ export default function Home() {
               <Link to="/register" style={styles.registerButton}>
                 Register
               </Link>
+
+              <Link to="/cart" style={styles.cartButton}>
+                🛒 Cart
+              </Link>
             </>
           )}
-
-          <Link to="/cart" style={styles.cartButton}>
-            🛒 Cart
-          </Link>
         </div>
       </nav>
 
@@ -167,16 +319,19 @@ export default function Home() {
         <div style={styles.heroContent}>
           <div style={styles.badge}>
             {isAuthenticated && user
-              ? `👋 Welcome back, ${firstName}!`
+              ? `👋 Welcome back, ${user.name || user.email}!`
               : "🔥 Delicious food, delivered fast"}
           </div>
 
           <h1 style={styles.heroTitle}>
             {isAuthenticated && user ? (
               <>
-                Hello, {firstName}!
+                Hello,{" "}
+                {user.name?.split(" ")[0] || "Food Lover"}!
                 <br />
-                <span style={styles.heroAccent}>Ready to order?</span>
+                <span style={styles.heroAccent}>
+                  Ready to order?
+                </span>
               </>
             ) : (
               <>
@@ -195,42 +350,42 @@ export default function Home() {
               : "Discover the best restaurants around you and get your favorite meals delivered right to your door."}
           </p>
 
-          <div style={styles.searchBox}>
+          <form
+            style={styles.searchBox}
+            onSubmit={(event) => event.preventDefault()}
+            role="search"
+          >
             <span style={styles.searchIcon}>🔍</span>
 
             <input
-              type="text"
+              type="search"
               placeholder="Search restaurants or cuisines..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               style={styles.searchInput}
+              aria-label="Search restaurants or cuisines"
             />
 
             <button
-              type="button"
+              type="submit"
               style={styles.searchButton}
-              onClick={() =>
-                document
-                  .getElementById("restaurants")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
             >
               Search
             </button>
-          </div>
+          </form>
 
           <div style={styles.heroStats}>
-            <div style={styles.stat}>
+            <div>
               <strong>500+</strong>
               <span>Restaurants</span>
             </div>
 
-            <div style={styles.stat}>
+            <div>
               <strong>30 min</strong>
               <span>Average delivery</span>
             </div>
 
-            <div style={styles.stat}>
+            <div>
               <strong>4.8 ⭐</strong>
               <span>Average rating</span>
             </div>
@@ -240,8 +395,11 @@ export default function Home() {
         <div style={styles.heroImageWrapper}>
           <img
             src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1000&q=85"
-            alt="Delicious food"
+            alt="Selection of delicious food"
             style={styles.heroImage}
+            loading="eager"
+            fetchPriority="high"
+            onError={handleImageError}
           />
 
           <div style={styles.deliveryCard}>
@@ -276,6 +434,7 @@ export default function Home() {
                 ? styles.categoryActive
                 : {}),
             }}
+            aria-pressed={selectedCategory === "All"}
           >
             <span style={styles.categoryIcon}>✨</span>
             <span>All</span>
@@ -285,17 +444,23 @@ export default function Home() {
             <button
               type="button"
               key={category.name}
-              onClick={() => setSelectedCategory(category.name)}
+              onClick={() =>
+                setSelectedCategory(category.name)
+              }
               style={{
                 ...styles.category,
                 ...(selectedCategory === category.name
                   ? styles.categoryActive
                   : {}),
               }}
+              aria-pressed={
+                selectedCategory === category.name
+              }
             >
               <span style={styles.categoryIcon}>
                 {category.icon}
               </span>
+
               <span>{category.name}</span>
             </button>
           ))}
@@ -303,10 +468,16 @@ export default function Home() {
       </section>
 
       {/* RESTAURANTS */}
-      <section id="restaurants" style={styles.restaurantSection}>
+      <section
+        id="restaurants"
+        style={styles.restaurantSection}
+      >
         <div style={styles.sectionHeader}>
           <div>
-            <p style={styles.smallTitle}>TOP PICKS FOR YOU</p>
+            <p style={styles.smallTitle}>
+              TOP PICKS FOR YOU
+            </p>
+
             <h2 style={styles.sectionTitle}>
               Popular near you
             </h2>
@@ -317,61 +488,173 @@ export default function Home() {
           </span>
         </div>
 
-        {filteredRestaurants.length === 0 ? (
+        {error && (
+          <div style={styles.errorBox} role="alert">
+            <strong>Something went wrong.</strong>
+            <p>{error}</p>
+
+            <button
+              type="button"
+              style={styles.retryButton}
+              onClick={() => {
+                const controller = new AbortController();
+                fetchRestaurants(controller.signal);
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {!error && filteredRestaurants.length === 0 ? (
           <div style={styles.empty}>
-            <div style={styles.emptyEmoji}>😕</div>
+            <div style={{ fontSize: "50px" }}>😕</div>
+
             <h3>No restaurants found</h3>
-            <p>Try searching for something else.</p>
+
+            <p>
+              Try searching for another restaurant or cuisine.
+            </p>
+
+            {(search || selectedCategory !== "All") && (
+              <button
+                type="button"
+                style={styles.retryButton}
+                onClick={() => {
+                  setSearch("");
+                  setSelectedCategory("All");
+                }}
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         ) : (
           <div style={styles.grid}>
-            {filteredRestaurants.map((restaurant) => (
-              <Link
-                key={restaurant.id}
-                to={`/restaurant/${restaurant.id}`}
-                style={styles.card}
-              >
-                <div style={styles.imageContainer}>
-                  <img
-                    src={restaurant.image}
-                    alt={restaurant.name}
-                    style={styles.restaurantImage}
-                  />
+            {filteredRestaurants.map((restaurant) => {
+              const firstItem =
+                getFirstMenuItem(restaurant);
 
-                  <div style={styles.favorite}>♡</div>
+              return (
+                <div
+                  key={restaurant.id}
+                  style={styles.cardWrapper}
+                >
+                  <div
+                    style={styles.card}
+                    onClick={() =>
+                      handleRestaurantClick(
+                        restaurant.id
+                      )
+                    }
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(event) => {
+                      if (
+                        event.key === "Enter" ||
+                        event.key === " "
+                      ) {
+                        event.preventDefault();
 
-                  <div style={styles.deliveryBadge}>
-                    ⚡ Fast delivery
-                  </div>
-                </div>
+                        handleRestaurantClick(
+                          restaurant.id
+                        );
+                      }
+                    }}
+                  >
+<div style={styles.imageContainer}>
+  <img
+    src={
+      restaurant.name === "BouF À LaPort"
+        ? "https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?auto=format&fit=crop&w=900&q=85"
+        : restaurant.name === "Pizza Palace"
+        ? "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=900&q=85"
+        : restaurant.name === "Taco House"
+        ? "https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&w=900&q=85"
+        : "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85"
+    }
+    alt={`${restaurant.name || "Restaurant"} food`}
+    style={styles.restaurantImage}
+    loading="lazy"
+    onError={(event) => {
+      event.currentTarget.src =
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=900&q=85";
+    }}
+  />
 
-                <div style={styles.cardContent}>
-                  <div style={styles.cardTitleRow}>
-                    <h3 style={styles.restaurantName}>
-                      {restaurant.name}
-                    </h3>
+  <div style={styles.favorite}>♡</div>
 
-                    <div style={styles.rating}>
-                      ⭐ {restaurant.rating}
+  <div style={styles.deliveryBadge}>
+    ⚡ Fast delivery
+  </div>
+</div>
+
+                    <div style={styles.cardContent}>
+                      <div style={styles.cardTitleRow}>
+                        <h3
+                          style={styles.restaurantName}
+                        >
+                          {restaurant.name ||
+                            "Restaurant"}
+                        </h3>
+
+                        <div style={styles.rating}>
+                          ⭐{" "}
+                          {formatRating(
+                            restaurant.rating
+                          )}
+                        </div>
+                      </div>
+
+                      <p style={styles.cuisine}>
+                        {restaurant.cuisine ||
+                          "Local restaurant"}
+                      </p>
+
+                      <div style={styles.details}>
+                        <span>
+                          🕐{" "}
+                          {restaurant.deliveryTime ||
+                            "30–45 min"}
+                        </span>
+
+                        <span>•</span>
+
+                        <span>
+                          {formatDeliveryFee(
+                            restaurant.deliveryFee
+                          )}
+                        </span>
+                      </div>
+
+                      <p style={styles.reviews}>
+                        {Number(
+                          restaurant.reviews
+                        ) || 0}{" "}
+                        ratings
+                      </p>
+
+                      {firstItem && (
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+
+                            addToCart(
+                              restaurant,
+                              firstItem
+                            );
+                          }}
+                          style={styles.addToCartButton}
+                        >
+                          🛒 Add to Cart
+                        </button>
+                      )}
                     </div>
                   </div>
-
-                  <p style={styles.cuisine}>
-                    {restaurant.cuisine}
-                  </p>
-
-                  <div style={styles.details}>
-                    <span>🕐 {restaurant.time}</span>
-                    <span>•</span>
-                    <span>{restaurant.fee}</span>
-                  </div>
-
-                  <p style={styles.reviews}>
-                    {restaurant.reviews} ratings
-                  </p>
                 </div>
-              </Link>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
@@ -394,7 +677,14 @@ export default function Home() {
             enjoy delicious meals without leaving home.
           </p>
 
-          <Link to="/login" style={styles.promoButton}>
+          <Link
+            to={
+              isAuthenticated
+                ? "/restaurants"
+                : "/login"
+            }
+            style={styles.promoButton}
+          >
             Start Ordering →
           </Link>
         </div>
@@ -409,7 +699,9 @@ export default function Home() {
             🍔 BOUF À LAPORT
           </div>
 
-          <p>Food you love. Delivered with care.</p>
+          <p>
+            Food you love. Delivered with care.
+          </p>
         </div>
 
         <div style={styles.footerRight}>
@@ -420,219 +712,196 @@ export default function Home() {
     </div>
   );
 }
-
 const styles = {
   page: {
     minHeight: "100vh",
-    background: "#faf9f7",
-    color: "#191919",
-    fontFamily:
-      "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    backgroundColor: "#fff",
+    fontFamily: "'Inter', 'Segoe UI', sans-serif",
+  },
+
+  loading: {
+    textAlign: "center",
+    padding: "80px 20px",
+    fontSize: "18px",
+    color: "#666",
+  },
+
+  notification: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    background: "#28a745",
+    color: "white",
+    padding: "16px 24px",
+    borderRadius: "10px",
+    fontWeight: "600",
+    zIndex: 1000,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
   },
 
   navbar: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "16px 48px",
+    borderBottom: "1px solid #f0f0f0",
     position: "sticky",
     top: 0,
-    zIndex: 50,
-    minHeight: "76px",
-    padding: "0 6%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    background: "rgba(255,255,255,0.96)",
-    borderBottom: "1px solid #eee",
-    backdropFilter: "blur(12px)",
+    backgroundColor: "white",
+    zIndex: 100,
   },
 
   logo: {
-    textDecoration: "none",
-    color: "#191919",
-    fontWeight: "900",
-    fontSize: "22px",
-    letterSpacing: "-0.8px",
     display: "flex",
     alignItems: "center",
+    textDecoration: "none",
+    fontSize: "24px",
+    fontWeight: "900",
+    color: "#222",
   },
 
   logoIcon: {
-    fontSize: "25px",
-    marginRight: "7px",
+    fontSize: "28px",
+    marginRight: "8px",
   },
 
   logoAccent: {
-    color: "#ff5a1f",
-    marginLeft: "3px",
+    color: "#ff4f0a",
   },
 
   navLinks: {
     display: "flex",
+    gap: "24px",
     alignItems: "center",
-    gap: "22px",
   },
 
   navLink: {
-    color: "#555",
     textDecoration: "none",
+    color: "#666",
     fontWeight: "600",
-    fontSize: "14px",
-  },
-
-  loginButton: {
-    textDecoration: "none",
-    color: "#191919",
-    fontWeight: "700",
-    fontSize: "14px",
-  },
-
-  registerButton: {
-    textDecoration: "none",
-    background: "#191919",
-    color: "#fff",
-    padding: "10px 17px",
-    borderRadius: "9px",
-    fontWeight: "700",
     fontSize: "14px",
   },
 
   profileButton: {
     textDecoration: "none",
-    color: "#191919",
+    color: "#222",
     fontWeight: "700",
     fontSize: "14px",
     display: "flex",
     alignItems: "center",
-    gap: "7px",
+    gap: "6px",
   },
 
-  avatarIcon: {
-    width: "30px",
-    height: "30px",
-    borderRadius: "50%",
-    display: "grid",
-    placeItems: "center",
-    background: "#fff1e9",
-    fontSize: "15px",
-  },
-
-  logoutButton: {
-    border: "none",
-    background: "transparent",
-    color: "#777",
+  loginButton: {
+    textDecoration: "none",
+    color: "#222",
     fontWeight: "700",
     fontSize: "14px",
-    cursor: "pointer",
+    border: "2px solid #222",
+    padding: "8px 18px",
+    borderRadius: "8px",
+  },
+
+  registerButton: {
+    textDecoration: "none",
+    background: "#191919",
+    color: "white",
+    padding: "8px 18px",
+    borderRadius: "8px",
+    fontWeight: "700",
+    fontSize: "14px",
   },
 
   cartButton: {
     textDecoration: "none",
-    background: "#ff5a1f",
-    color: "#fff",
-    padding: "10px 17px",
-    borderRadius: "9px",
-    fontWeight: "800",
+    color: "#222",
+    fontWeight: "700",
     fontSize: "14px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
   },
 
   hero: {
-    maxWidth: "1250px",
-    margin: "0 auto",
-    padding: "80px 6% 70px",
     display: "grid",
-    gridTemplateColumns: "1.05fr 0.95fr",
-    gap: "55px",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "48px",
+    padding: "80px 48px",
     alignItems: "center",
+    backgroundColor: "#fafafa",
   },
 
   heroContent: {
-    maxWidth: "650px",
+    maxWidth: "600px",
   },
 
   badge: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "9px 15px",
-    borderRadius: "999px",
-    background: "#fff0e8",
-    color: "#e84d16",
-    fontSize: "13px",
-    fontWeight: "800",
-    marginBottom: "22px",
+    display: "inline-block",
+    backgroundColor: "#fff3e0",
+    color: "#ff4f0a",
+    padding: "8px 16px",
+    borderRadius: "20px",
+    fontSize: "14px",
+    fontWeight: "700",
+    marginBottom: "24px",
   },
 
   heroTitle: {
-    fontSize: "clamp(46px, 6vw, 76px)",
-    lineHeight: "0.98",
-    letterSpacing: "-4px",
-    margin: "0 0 25px",
+    fontSize: "48px",
+    lineHeight: "1.2",
     fontWeight: "900",
+    marginBottom: "24px",
+    color: "#222",
   },
 
   heroAccent: {
-    color: "#ff5a1f",
+    color: "#ff4f0a",
   },
 
   heroText: {
     fontSize: "18px",
-    lineHeight: "1.65",
     color: "#666",
-    maxWidth: "570px",
-    margin: "0 0 30px",
+    marginBottom: "32px",
+    lineHeight: "1.6",
   },
 
   searchBox: {
-    height: "62px",
     display: "flex",
     alignItems: "center",
-    background: "#fff",
-    border: "1px solid #e6e2de",
-    borderRadius: "15px",
-    padding: "6px",
-    boxShadow: "0 12px 35px rgba(0,0,0,0.07)",
-    maxWidth: "620px",
+    backgroundColor: "white",
+    padding: "8px",
+    borderRadius: "50px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
+    marginBottom: "48px",
   },
 
   searchIcon: {
-    fontSize: "19px",
-    marginLeft: "15px",
+    fontSize: "18px",
+    padding: "0 12px",
   },
 
   searchInput: {
     flex: 1,
-    minWidth: 0,
     border: "none",
     outline: "none",
-    fontSize: "15px",
-    padding: "0 14px",
-    color: "#222",
-    background: "transparent",
+    fontSize: "16px",
+    padding: "8px",
   },
 
   searchButton: {
+    backgroundColor: "#ff4f0a",
+    color: "white",
     border: "none",
-    background: "#ff5a1f",
-    color: "#fff",
-    height: "50px",
-    padding: "0 23px",
-    borderRadius: "11px",
-    fontWeight: "800",
+    padding: "12px 32px",
+    borderRadius: "50px",
+    fontSize: "16px",
+    fontWeight: "700",
     cursor: "pointer",
   },
 
   heroStats: {
     display: "flex",
-    gap: "38px",
-    marginTop: "38px",
-  },
-
-  stat: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "5px",
-  },
-
-  statStrong: {
-    fontSize: "20px",
-    fontWeight: "900",
+    gap: "48px",
   },
 
   heroImageWrapper: {
@@ -641,126 +910,119 @@ const styles = {
 
   heroImage: {
     width: "100%",
-    height: "540px",
+    height: "500px",
     objectFit: "cover",
-    borderRadius: "30px",
+    borderRadius: "24px",
     display: "block",
-    boxShadow: "0 25px 70px rgba(0,0,0,0.14)",
   },
 
   deliveryCard: {
     position: "absolute",
-    left: "-25px",
-    bottom: "30px",
+    bottom: "24px",
+    left: "24px",
+    backgroundColor: "white",
+    padding: "16px 20px",
+    borderRadius: "16px",
     display: "flex",
     alignItems: "center",
-    gap: "13px",
-    padding: "16px 20px",
-    background: "#fff",
-    borderRadius: "15px",
-    boxShadow: "0 15px 40px rgba(0,0,0,0.14)",
+    gap: "12px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.15)",
   },
 
   deliveryIcon: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#fff0e8",
-    display: "grid",
-    placeItems: "center",
-    fontSize: "22px",
+    fontSize: "30px",
   },
 
   section: {
-    maxWidth: "1250px",
-    margin: "0 auto",
-    padding: "65px 6% 30px",
-  },
-
-  restaurantSection: {
-    maxWidth: "1250px",
-    margin: "0 auto",
-    padding: "45px 6% 80px",
+    padding: "80px 48px",
   },
 
   sectionHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "end",
-    marginBottom: "25px",
+    alignItems: "flex-end",
+    marginBottom: "48px",
   },
 
   smallTitle: {
-    margin: "0 0 7px",
-    color: "#ff5a1f",
+    color: "#ff4f0a",
     fontSize: "12px",
-    fontWeight: "900",
-    letterSpacing: "1.5px",
+    fontWeight: "800",
+    letterSpacing: "2px",
+    marginBottom: "8px",
   },
 
   sectionTitle: {
-    margin: 0,
-    fontSize: "32px",
-    letterSpacing: "-1.3px",
+    fontSize: "36px",
     fontWeight: "900",
+    color: "#222",
   },
 
   categories: {
     display: "flex",
-    gap: "13px",
-    flexWrap: "wrap",
+    gap: "16px",
+    overflowX: "auto",
+    paddingBottom: "16px",
   },
 
   category: {
-    border: "1px solid #e7e2dd",
-    background: "#fff",
-    color: "#333",
-    padding: "13px 18px",
-    borderRadius: "13px",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
-    gap: "8px",
-    fontWeight: "700",
+    justifyContent: "center",
+    minWidth: "100px",
+    padding: "16px",
+    backgroundColor: "white",
+    border: "1px solid #eee",
+    borderRadius: "16px",
     cursor: "pointer",
   },
 
   categoryActive: {
-    background: "#191919",
-    color: "#fff",
-    borderColor: "#191919",
+    border: "2px solid #ff4f0a",
+    backgroundColor: "#fff3e0",
   },
 
   categoryIcon: {
-    fontSize: "20px",
+    fontSize: "32px",
+    marginBottom: "8px",
+  },
+
+  restaurantSection: {
+    padding: "0 48px 80px",
   },
 
   restaurantCount: {
-    color: "#888",
-    fontSize: "14px",
-    fontWeight: "700",
+    color: "#666",
+    fontWeight: "600",
   },
 
   grid: {
     display: "grid",
     gridTemplateColumns:
-      "repeat(auto-fit, minmax(280px, 1fr))",
-    gap: "24px",
+      "repeat(auto-fill, minmax(300px, 1fr))",
+    gap: "32px",
+  },
+
+  cardWrapper: {
+    cursor: "pointer",
   },
 
   card: {
-    background: "#fff",
-    borderRadius: "18px",
+    backgroundColor: "white",
+    borderRadius: "16px",
     overflow: "hidden",
-    textDecoration: "none",
-    color: "#191919",
-    border: "1px solid #eee",
-    transition: "transform 0.2s ease",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+    transition: "transform 0.2s, box-shadow 0.2s",
   },
 
+  /* RESTAURANT IMAGE */
   imageContainer: {
     position: "relative",
+    width: "100%",
     height: "220px",
     overflow: "hidden",
+    backgroundColor: "#f3f3f3",
   },
 
   restaurantImage: {
@@ -772,149 +1034,178 @@ const styles = {
 
   favorite: {
     position: "absolute",
-    right: "14px",
-    top: "14px",
+    top: "16px",
+    right: "16px",
+    backgroundColor: "white",
+    borderRadius: "50%",
     width: "38px",
     height: "38px",
-    borderRadius: "50%",
-    background: "rgba(255,255,255,0.95)",
-    display: "grid",
-    placeItems: "center",
-    fontSize: "23px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "21px",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.15)",
   },
 
   deliveryBadge: {
     position: "absolute",
-    left: "13px",
-    bottom: "13px",
-    background: "#fff",
-    padding: "7px 10px",
-    borderRadius: "8px",
+    bottom: "16px",
+    left: "16px",
+    backgroundColor: "white",
+    padding: "7px 12px",
+    borderRadius: "20px",
     fontSize: "12px",
-    fontWeight: "800",
+    fontWeight: "700",
+    color: "#222",
+    boxShadow: "0 3px 10px rgba(0,0,0,0.10)",
   },
 
   cardContent: {
-    padding: "18px",
+    padding: "20px",
   },
 
   cardTitleRow: {
     display: "flex",
     justifyContent: "space-between",
-    gap: "10px",
     alignItems: "center",
+    marginBottom: "8px",
   },
 
   restaurantName: {
+    fontSize: "18px",
+    fontWeight: "700",
     margin: 0,
-    fontSize: "19px",
-    fontWeight: "900",
   },
 
   rating: {
-    fontSize: "13px",
-    fontWeight: "800",
-    whiteSpace: "nowrap",
+    backgroundColor: "#fff3e0",
+    color: "#ff4f0a",
+    padding: "4px 8px",
+    borderRadius: "8px",
+    fontSize: "14px",
+    fontWeight: "700",
   },
 
   cuisine: {
-    margin: "7px 0",
-    color: "#777",
+    color: "#666",
     fontSize: "14px",
+    marginBottom: "8px",
   },
 
   details: {
     display: "flex",
-    gap: "7px",
-    color: "#555",
-    fontSize: "13px",
+    alignItems: "center",
+    gap: "8px",
+    color: "#888",
+    fontSize: "14px",
+    marginBottom: "8px",
   },
 
   reviews: {
-    margin: "10px 0 0",
-    color: "#999",
-    fontSize: "12px",
+    color: "#888",
+    fontSize: "14px",
+    marginBottom: "16px",
+  },
+
+  addToCartButton: {
+    width: "100%",
+    padding: "10px",
+    background: "#ff4f0a",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontWeight: "700",
+    cursor: "pointer",
+    marginTop: "12px",
   },
 
   empty: {
     textAlign: "center",
-    padding: "70px 20px",
-    background: "#fff",
-    borderRadius: "18px",
-    border: "1px solid #eee",
+    padding: "80px 20px",
+    color: "#666",
   },
 
-  emptyEmoji: {
-    fontSize: "50px",
+  errorBox: {
+    textAlign: "center",
+    padding: "40px 20px",
+    marginBottom: "30px",
+    borderRadius: "16px",
+    backgroundColor: "#fff3f0",
+    color: "#444",
+  },
+
+  retryButton: {
+    marginTop: "12px",
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "8px",
+    backgroundColor: "#ff4f0a",
+    color: "white",
+    fontWeight: "700",
+    cursor: "pointer",
   },
 
   promo: {
-    maxWidth: "1130px",
-    margin: "20px auto 80px",
-    padding: "55px",
-    borderRadius: "28px",
-    background: "#191919",
-    color: "#fff",
+    backgroundColor: "#191919",
+    color: "white",
+    padding: "80px 48px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: "30px",
   },
 
   promoSmall: {
-    color: "#ff7a47",
-    fontWeight: "900",
+    color: "#ff4f0a",
     fontSize: "12px",
-    letterSpacing: "1.5px",
+    fontWeight: "800",
+    letterSpacing: "2px",
+    marginBottom: "8px",
   },
 
   promoTitle: {
-    fontSize: "42px",
-    lineHeight: "1.05",
-    letterSpacing: "-1.8px",
-    margin: "12px 0",
+    fontSize: "36px",
+    fontWeight: "900",
+    marginBottom: "16px",
   },
 
   promoText: {
-    maxWidth: "560px",
-    color: "#bbb",
-    lineHeight: "1.6",
+    fontSize: "16px",
+    color: "#aaa",
+    marginBottom: "32px",
   },
 
   promoButton: {
-    display: "inline-block",
-    marginTop: "10px",
-    padding: "13px 20px",
-    borderRadius: "10px",
-    background: "#ff5a1f",
-    color: "#fff",
+    backgroundColor: "#ff4f0a",
+    color: "white",
+    padding: "16px 32px",
+    borderRadius: "50px",
     textDecoration: "none",
-    fontWeight: "800",
+    fontWeight: "700",
   },
 
   promoEmoji: {
-    fontSize: "100px",
+    fontSize: "120px",
   },
 
   footer: {
-    padding: "35px 6%",
-    borderTop: "1px solid #e8e4df",
     display: "flex",
     justifyContent: "space-between",
-    gap: "30px",
-    color: "#777",
-    fontSize: "13px",
+    alignItems: "center",
+    padding: "32px 48px",
+    backgroundColor: "#111",
+    color: "#888",
+    fontSize: "14px",
   },
 
   footerLogo: {
-    color: "#191919",
+    fontSize: "18px",
     fontWeight: "900",
-    fontSize: "16px",
+    color: "white",
+    marginBottom: "8px",
   },
 
   footerRight: {
     display: "flex",
-    gap: "25px",
-    alignItems: "center",
+    gap: "16px",
   },
 };
