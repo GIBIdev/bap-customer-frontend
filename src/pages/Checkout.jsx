@@ -1,628 +1,344 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
 import { useAuth } from "../context/AuthContext.jsx";
-import "../components/css/Checkout.css"
+import Navbar from "../components/layout/Navbar";
+import "../components/css/Checkout.css";
 
 export default function Checkout() {
-  const navigate = useNavigate();
-
-  const { isAuthenticated } = useAuth();
-
   const [cart, setCart] = useState([]);
-
-  const [address, setAddress] = useState({
-    street: "",
+  const [formData, setFormData] = useState({
+    address: "",
     city: "",
-    state: "",
     zipCode: "",
+    phone: "",
     instructions: "",
   });
-
+  const [paymentMethod, setPaymentMethod] = useState("card");
   const [loading, setLoading] = useState(false);
-
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const { user, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
-  /*
-   * Load cart
-   */
   useEffect(() => {
-    const savedCart = JSON.parse(
-      localStorage.getItem("cart") || "[]"
-    );
-
+    const savedCart = JSON.parse(localStorage.getItem("cart") || "[]");
+    if (savedCart.length === 0) {
+      navigate("/cart");
+    }
     setCart(savedCart);
-  }, []);
 
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        address: user.address || "",
+        phone: user.phone || "",
+      }));
+    }
+  }, [navigate, user]);
 
-  /*
-   * Price helper
-   */
   function formatPrice(cents) {
     return `$${(cents / 100).toFixed(2)}`;
   }
 
-
-  /*
-   * Calculate subtotal
-   */
-  const subtotalCents = cart.reduce(
-    (sum, item) =>
-      sum +
-      item.priceCents * item.quantity,
+  const totalCents = cart.reduce(
+    (sum, item) => sum + item.priceCents * item.quantity,
     0
   );
 
+  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const deliveryFee = totalCents > 0 ? 299 : 0;
+  const tax = Math.round(totalCents * 0.08);
+  const grandTotal = totalCents + deliveryFee + tax;
 
-  /*
-   * Delivery fee
-   *
-   * Temporary value.
-   *
-   * Later this should come from the backend
-   * based on restaurant/customer location.
-   */
-  const deliveryFeeCents =
-    subtotalCents > 0 ? 199 : 0;
-
-
-  /*
-   * Service fee
-   *
-   * Temporary value.
-   *
-   * Later this should come from BAP's
-   * business rules.
-   */
-  const serviceFeeCents =
-    Math.round(subtotalCents * 0.05);
-
-
-  /*
-   * Final total
-   */
-  const totalCents =
-    subtotalCents +
-    deliveryFeeCents +
-    serviceFeeCents;
-
-
-  /*
-   * Address update
-   */
-  function handleAddressChange(e) {
+  const handleInputChange = (e) => {
     const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
 
-    setAddress((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  }
-
-
-  /*
-   * Submit order
-   */
-  async function handlePlaceOrder(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     setError("");
+    setLoading(true);
 
-
-    /*
-     * Customer must be authenticated.
-     */
-    if (!isAuthenticated) {
-      navigate("/login");
+    if (!formData.address || !formData.city || !formData.zipCode) {
+      setError("Please fill in all required fields");
+      setLoading(false);
       return;
     }
 
-
-    /*
-     * Make sure cart isn't empty.
-     */
-    if (cart.length === 0) {
-      setError(
-        "Your cart is empty."
-      );
-
-      return;
-    }
-
-
-    /*
-     * Basic address validation.
-     */
-    if (
-      !address.street ||
-      !address.city ||
-      !address.state ||
-      !address.zipCode
-    ) {
-      setError(
-        "Please complete your delivery address."
-      );
-
-      return;
-    }
-
+    // Prepare order data for your NestJS backend
+    const orderData = {
+      items: cart.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.priceCents / 100, // Convert cents to dollars
+        quantity: item.quantity,
+        description: item.description || "",
+      })),
+      total: grandTotal / 100, // Convert cents to dollars
+      subtotal: totalCents / 100,
+      deliveryFee: deliveryFee / 100,
+      tax: tax / 100,
+      deliveryAddress: {
+        address: formData.address,
+        city: formData.city,
+        zipCode: formData.zipCode,
+        instructions: formData.instructions,
+      },
+      phone: formData.phone,
+      paymentMethod,
+    };
 
     try {
-      setLoading(true);
+      const token = localStorage.getItem("token");
+      
+      // Call your NestJS backend
+      const response = await fetch("http://localhost:3000/api/v1/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: token ? `Bearer ${token}` : "",
+        },
+        body: JSON.stringify(orderData),
+      });
 
-
-      /*
-       * Create order.
-       *
-       * The exact payload may change once
-       * we confirm your Prisma schema/backend.
-       */
-      const res = await api.post(
-        "/orders",
-        {
-          items: cart.map((item) => ({
-            menuItemId: item.id,
-            quantity: item.quantity,
-          })),
-
-          deliveryAddress: {
-            street: address.street,
-            city: address.city,
-            state: address.state,
-            zipCode: address.zipCode,
-            instructions:
-              address.instructions,
-          },
-
-          subtotalCents,
-          deliveryFeeCents,
-          serviceFeeCents,
-          totalCents,
-        }
-      );
-
-
-      /*
-       * Clear cart after successful order.
-       */
-      localStorage.removeItem("cart");
-
-      setCart([]);
-
-
-      /*
-       * Backend should return the
-       * newly created order.
-       */
-      const orderId =
-        res.data.id ||
-        res.data.orderId;
-
-
-      if (!orderId) {
-        throw new Error(
-          "Order was created but no order ID was returned."
-        );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to place order");
       }
 
+      const result = await response.json();
+      
+      // Save order to localStorage for tracking
+      const orders = JSON.parse(localStorage.getItem("orders") || "[]");
+      orders.push({
+        ...result,
+        items: cart,
+        createdAt: new Date().toISOString(),
+      });
+      localStorage.setItem("orders", JSON.stringify(orders));
 
-      /*
-       * Go to order tracking.
-       */
-      navigate(`/order/${orderId}`);
-
-    } catch (error) {
-      console.error(
-        "Unable to create order:",
-        error
-      );
-
-      setError(
-        error.response?.data?.message ||
-        "Unable to place your order. Please try again."
-      );
-
+      if (paymentMethod === "card") {
+        // Navigate to payment page
+        navigate(`/payment/${result.id}`);
+      } else {
+        // Cash on delivery - success
+        localStorage.removeItem("cart");
+        setSuccess(true);
+        setTimeout(() => {
+          navigate("/order-tracking");
+        }, 2000);
+      }
+    } catch (err) {
+      setError(err.message || "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
-  }
+  };
 
-
-  /*
-   * Empty cart
-   */
-  if (cart.length === 0) {
+  if (success) {
     return (
-      <div className="checkout-empty">
-
-        <div className="checkout-empty-icon">
-          🛒
+      <>
+        <Navbar />
+        <div className="checkout-success">
+          <div className="success-icon">✅</div>
+          <h1>Order Placed Successfully!</h1>
+          <p>Your order has been confirmed and will be delivered soon.</p>
+          <Link to="/" className="checkout-primary-button">
+            Continue Shopping
+          </Link>
         </div>
-
-        <h1>Your cart is empty</h1>
-
-        <p>
-          Add some delicious food before
-          checking out.
-        </p>
-
-        <Link
-          to="/"
-          className="bap-button bap-button-primary"
-        >
-          Browse Restaurants →
-        </Link>
-
-      </div>
+      </>
     );
   }
 
-
   return (
-    <div className="checkout-page">
-
-      {/* HEADER */}
-
-      <div className="checkout-header">
-
-        <Link
-          to="/cart"
-          className="checkout-back"
-        >
-          ← Back to cart
-        </Link>
-
-        <h1>Checkout</h1>
-
-        <p>
-          Complete your delivery details
-          and review your order.
-        </p>
-
-      </div>
-
-
-      {/* ERROR */}
-
-      {error && (
-        <div className="login-error">
-          {error}
+    <>
+      <Navbar />
+      <div className="checkout-page">
+        <div className="checkout-header">
+          <Link to="/cart" className="checkout-back">
+            ← Back to Cart
+          </Link>
+          <h1>Checkout</h1>
         </div>
-      )}
 
-
-      <div className="checkout-layout">
-
-        {/* =====================================
-            LEFT SIDE
-            ===================================== */}
-
-        <form
-          className="checkout-form"
-          onSubmit={handlePlaceOrder}
-        >
-
-          {/* DELIVERY */}
-
-          <div className="checkout-card">
-
-            <div className="checkout-card-header">
-
-              <div className="checkout-step">
-                1
-              </div>
-
-              <div>
-                <h2>
-                  Delivery address
-                </h2>
-
-                <p>
-                  Where should we deliver
-                  your order?
-                </p>
-              </div>
-
-            </div>
-
-
-            <div className="checkout-fields">
-
-              {/* STREET */}
-
-              <div className="checkout-field full">
-
-                <label htmlFor="street">
-                  Street address
-                </label>
-
-                <input
-                  id="street"
-                  name="street"
-                  value={address.street}
-                  onChange={handleAddressChange}
-                  placeholder="123 Main Street"
-                />
-
-              </div>
-
-
-              {/* CITY */}
-
-              <div className="checkout-field">
-
-                <label htmlFor="city">
-                  City
-                </label>
-
-                <input
-                  id="city"
-                  name="city"
-                  value={address.city}
-                  onChange={handleAddressChange}
-                  placeholder="Charlotte"
-                />
-
-              </div>
-
-
-              {/* STATE */}
-
-              <div className="checkout-field">
-
-                <label htmlFor="state">
-                  State
-                </label>
-
-                <input
-                  id="state"
-                  name="state"
-                  value={address.state}
-                  onChange={handleAddressChange}
-                  placeholder="NC"
-                />
-
-              </div>
-
-
-              {/* ZIP */}
-
-              <div className="checkout-field">
-
-                <label htmlFor="zipCode">
-                  ZIP code
-                </label>
-
-                <input
-                  id="zipCode"
-                  name="zipCode"
-                  value={address.zipCode}
-                  onChange={handleAddressChange}
-                  placeholder="28202"
-                />
-
-              </div>
-
-
-              {/* INSTRUCTIONS */}
-
-              <div className="checkout-field full">
-
-                <label htmlFor="instructions">
-                  Delivery instructions
-                  <span>
-                    {" "}Optional
-                  </span>
-                </label>
-
-                <textarea
-                  id="instructions"
-                  name="instructions"
-                  value={address.instructions}
-                  onChange={handleAddressChange}
-                  placeholder="Apartment number, gate code, special instructions..."
-                  rows="4"
-                />
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* PAYMENT */}
-
-          <div className="checkout-card">
-
-            <div className="checkout-card-header">
-
-              <div className="checkout-step">
-                2
-              </div>
-
-              <div>
-                <h2>
-                  Payment
-                </h2>
-
-                <p>
-                  Secure payment processing
-                </p>
-              </div>
-
-            </div>
-
-
-            <div className="payment-placeholder">
-
-              <div className="payment-icon">
-                💳
-              </div>
-
-              <div>
-
-                <strong>
-                  Payment integration
-                </strong>
-
-                <p>
-                  Payment processing will be
-                  connected to the BAP payment
-                  service.
-                </p>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          {/* PLACE ORDER */}
-
-          <button
-            type="submit"
-            className="bap-button bap-button-primary bap-button-full checkout-submit"
-            disabled={loading}
-          >
-            {loading
-              ? "Placing order..."
-              : `Place Order • ${formatPrice(totalCents)}`}
-          </button>
-
-        </form>
-
-
-        {/* =====================================
-            RIGHT SIDE — ORDER SUMMARY
-            ===================================== */}
-
-        <aside className="checkout-summary">
-
-          <div className="checkout-summary-card">
-
-            <h2>
-              Your order
-            </h2>
-
-
-            <div className="summary-items">
-
-              {cart.map((item) => (
-
-                <div
-                  key={item.id}
-                  className="summary-item"
-                >
-
-                  <div>
-
-                    <strong>
-                      {item.quantity} ×{" "}
-                      {item.name}
-                    </strong>
-
-                    <span>
-                      {formatPrice(
-                        item.priceCents
-                      )}{" "}
-                      each
-                    </span>
-
-                  </div>
-
-                  <strong>
-                    {formatPrice(
-                      item.priceCents *
-                      item.quantity
-                    )}
-                  </strong>
-
+        <div className="checkout-layout">
+          <div className="checkout-form">
+            {error && <div className="checkout-error">{error}</div>}
+
+            <form onSubmit={handleSubmit}>
+              <div className="checkout-section">
+                <h2>Delivery Address</h2>
+                <div className="form-group">
+                  <label>Street Address *</label>
+                  <input
+                    type="text"
+                    name="address"
+                    value={formData.address}
+                    onChange={handleInputChange}
+                    placeholder="123 Main St"
+                    required
+                  />
                 </div>
 
-              ))}
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>City *</label>
+                    <input
+                      type="text"
+                      name="city"
+                      value={formData.city}
+                      onChange={handleInputChange}
+                      placeholder="New York"
+                      required
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Zip Code *</label>
+                    <input
+                      type="text"
+                      name="zipCode"
+                      value={formData.zipCode}
+                      onChange={handleInputChange}
+                      placeholder="10001"
+                      required
+                    />
+                  </div>
+                </div>
 
-            </div>
+                <div className="form-group">
+                  <label>Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
 
+                <div className="form-group">
+                  <label>Delivery Instructions (Optional)</label>
+                  <textarea
+                    name="instructions"
+                    value={formData.instructions}
+                    onChange={handleInputChange}
+                    placeholder="Gate code, building number, etc."
+                    rows="3"
+                  />
+                </div>
+              </div>
 
-            <div className="summary-divider" />
+              <div className="checkout-section">
+                <h2>Payment Method</h2>
+                <div className="payment-methods">
+                  <button
+                    type="button"
+                    className={`payment-method ${paymentMethod === "card" ? "active" : ""}`}
+                    onClick={() => setPaymentMethod("card")}
+                  >
+                    💳 Credit / Debit Card
+                  </button>
+                  <button
+                    type="button"
+                    className={`payment-method ${paymentMethod === "cash" ? "active" : ""}`}
+                    onClick={() => setPaymentMethod("cash")}
+                  >
+                    💵 Cash on Delivery
+                  </button>
+                </div>
 
-
-            <div className="summary-row">
-
-              <span>
-                Subtotal
-              </span>
-
-              <strong>
-                {formatPrice(
-                  subtotalCents
+                {paymentMethod === "card" && (
+                  <div className="card-details">
+                    <div className="form-group">
+                      <label>Card Number</label>
+                      <input
+                        type="text"
+                        placeholder="4242 4242 4242 4242"
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Expiry Date</label>
+                        <input
+                          type="text"
+                          placeholder="MM/YY"
+                          disabled={loading}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>CVC</label>
+                        <input
+                          type="text"
+                          placeholder="123"
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                    <p className="card-note">🔒 Secure payment processed by Stripe</p>
+                  </div>
                 )}
-              </strong>
+              </div>
 
-            </div>
-
-
-            <div className="summary-row">
-
-              <span>
-                Delivery
-              </span>
-
-              <strong>
-                {formatPrice(
-                  deliveryFeeCents
-                )}
-              </strong>
-
-            </div>
-
-
-            <div className="summary-row">
-
-              <span>
-                Service fee
-              </span>
-
-              <strong>
-                {formatPrice(
-                  serviceFeeCents
-                )}
-              </strong>
-
-            </div>
-
-
-            <div className="summary-divider" />
-
-
-            <div className="summary-total">
-
-              <span>
-                Total
-              </span>
-
-              <strong>
-                {formatPrice(
-                  totalCents
-                )}
-              </strong>
-
-            </div>
-
-
-            <p className="checkout-security">
-              🔒 Your payment information
-              is securely processed.
-            </p>
-
+              <button
+                type="submit"
+                className="checkout-submit"
+                disabled={loading}
+              >
+                {loading ? "Processing..." : `Place Order • ${formatPrice(grandTotal)}`}
+              </button>
+            </form>
           </div>
 
-        </aside>
+          <aside className="checkout-summary">
+            <div className="checkout-summary-card">
+              <h2>Order Summary</h2>
+              <p className="order-items-count">{totalItems} items</p>
 
+              <div className="summary-items">
+                {cart.map(item => (
+                  <div key={item.id} className="summary-item">
+                    <span>{item.quantity}× {item.name}</span>
+                    <span>{formatPrice(item.priceCents * item.quantity)}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="summary-divider" />
+
+              <div className="summary-row">
+                <span>Subtotal</span>
+                <span>{formatPrice(totalCents)}</span>
+              </div>
+
+              <div className="summary-row">
+                <span>Delivery Fee</span>
+                <span>{deliveryFee === 0 ? "Free" : formatPrice(deliveryFee)}</span>
+              </div>
+
+              <div className="summary-row">
+                <span>Tax (8%)</span>
+                <span>{formatPrice(tax)}</span>
+              </div>
+
+              <div className="summary-divider" />
+
+              <div className="summary-total">
+                <span>Total</span>
+                <strong>{formatPrice(grandTotal)}</strong>
+              </div>
+
+              {!isAuthenticated && (
+                <div className="checkout-guest-note">
+                  <p>💡 <Link to="/login" state={{ from: "/checkout" }}>Sign in</Link> to save your address and track orders</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
       </div>
-
-    </div>
+    </>
   );
 }

@@ -10,6 +10,7 @@ import Input from "../components/common/Input";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
 
+
 export default function Register() {
   const { setAuthState } = useAuth();
   const navigate = useNavigate();
@@ -35,6 +36,24 @@ export default function Register() {
       [name]: value,
     }));
   }
+
+function addToCart(item) {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const existingItem = cart.find(cartItem => cartItem.id === item.id);
+
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    cart.push({
+      ...item,
+      quantity: 1,
+      priceCents: item.priceCents || item.price * 100, // Convert if needed
+    });
+  }
+
+  localStorage.setItem("cart", JSON.stringify(cart));
+  // Optional: Show a notification
+}
 
   // Handler specifically for react-phone-number-input
   function handlePhoneChange(value) {
